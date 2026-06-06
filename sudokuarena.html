@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Sudoku Arena v4</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+      -webkit-appearance: none; margin: 0;
+    }
+    input[type=number] { -moz-appearance: textfield; }
+    
+    .cell-correct { color: #34d399 !important; background-color: #064e3b !important; }
+    .cell-wrong { color: #f87171 !important; background-color: #450a0a !important; animation: shake 0.2s ease-in-out; }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    /* Animasi Papan Remuk Eksklusif */
+    @keyframes remuk {
+      0% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0); }
+      20% { transform: scale(1.1) rotate(-6deg) translateY(-15px); filter: hue-rotate(90deg) brightness(1.3); }
+      40% { transform: scale(0.85) rotate(10deg) translateY(20px) translateX(-15px); }
+      60% { transform: scale(0.6) rotate(-18deg) translateX(30px) translateY(50px); filter: opacity(0.8); }
+      80% { transform: scale(0.3) rotate(35deg) translateY(250px); filter: blur(6px); }
+      100% { transform: scale(0) rotate(75deg) translateY(700px); opacity: 0; }
+    }
+    .animate-board-remuk {
+      animation: remuk 1.2s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans selection:bg-indigo-500 selection:text-white">
+
+  <header class="bg-slate-900/80 backdrop-blur-md p-5 shadow-2xl text-center border-b border-slate-800 sticky top-0 z-10">
+    <h1 class="text-3xl font-black tracking-tighter text-indigo-500 uppercase">SUDOKU <span class="text-slate-100">ARENA</span> <span class="text-xs bg-indigo-600 text-white px-2 py-0.5 rounded-md align-middle ml-1">V4</span></h1>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center p-4 relative overflow-hidden">
+    
+    <div id="menu-view" class="w-full max-w-xl bg-slate-900 rounded-3xl shadow-2xl p-8 border border-slate-800/80">
+      
+      <div class="mb-8 p-4 bg-slate-950 rounded-2xl border border-slate-800">
+        <h3 class="text-center text-xs font-black text-slate-500 mb-3 tracking-widest uppercase">🏆 REKOR TERBAIK ANDA (PERSONAL BEST)</h3>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+          <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+            <div class="text-slate-500 font-sans text-[10px] font-bold">MODE 3x3</div>
+            <div id="pb-3x3" class="text-amber-400 font-bold mt-0.5">--:--</div>
+          </div>
+          <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+            <div class="text-slate-500 font-sans text-[10px] font-bold">MODE 6x6</div>
+            <div id="pb-6x6" class="text-amber-400 font-bold mt-0.5">--:--</div>
+          </div>
+          <div class="bg-slate-900 p-2 rounded-xl border border-slate-800">
+            <div class="text-slate-500 font-sans text-[10px] font-bold">MODE 9x9</div>
+            <div id="pb-9x9" class="text-amber-400 font-bold mt-0.5">--:--</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="text-sm font-black text-center mb-4 text-slate-400 tracking-[0.25em] uppercase">PILIH MODE BERMAIN</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+          <div>
+            <span class="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Casual Mode</span>
+            <p class="text-slate-400 text-xs mt-2 mb-4 leading-relaxed">Bermain santai tanpa tekanan batas waktu murni mengasah logika Anda. Pilih ukuran papan sesuka hati.</p>
+          </div>
+          <div class="flex flex-col gap-2">
+            <button onclick="startCasualGame('3x3')" class="w-full bg-slate-900 hover:bg-indigo-600 border border-slate-800 text-xs font-bold py-2.5 rounded-xl transition-all">Main 3 x 3</button>
+            <button onclick="startCasualGame('6x6')" class="w-full bg-slate-900 hover:bg-blue-600 border border-slate-800 text-xs font-bold py-2.5 rounded-xl transition-all">Main 6 x 6</button>
+            <button onclick="startCasualGame('9x9')" class="w-full bg-slate-900 hover:bg-purple-600 border border-slate-800 text-xs font-bold py-2.5 rounded-xl transition-all">Main 9 x 9</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 flex flex-col justify-between border-amber-500/20 shadow-lg shadow-amber-950/5">
+          <div>
+            <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Time Attack</span>
+            <p class="text-slate-400 text-xs mt-2 mb-4 leading-relaxed">Uji adrenalin Anda! Ukuran papan dipilih acak dan waktu berjalan mundur secara ketat (3x3: 5-15d, 6x6: 3-5m, 9x9: 5-8m).</p>
+          </div>
+          <button onclick="startTimeAttackChallenge()" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-sm font-black py-4 rounded-xl transition-all tracking-wide shadow-md uppercase active:scale-98">
+            ⚡ MULAI ACAK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="game-view" class="hidden w-full max-w-2xl bg-slate-900 rounded-3xl shadow-2xl p-6 border border-slate-800">
+      <div class="flex justify-between items-center mb-6 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+        <div class="flex flex-col">
+          <span id="timer-type-label" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Waktu</span>
+          <span id="timer-display" class="text-2xl font-mono font-black text-indigo-400">00:00</span>
+        </div>
+        <div class="text-center">
+          <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ukuran</span>
+          <span id="game-size-badge" class="text-xs bg-slate-800 text-slate-300 font-mono font-bold px-3 py-1 rounded-md mt-1 inline-block border border-slate-700">9x9</span>
+        </div>
+        <div class="flex flex-col items-end">
+          <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Kesalahan</span>
+          <span id="mistake-display" class="text-2xl font-mono font-black text-rose-500">0 / 2</span>
+        </div>
+      </div>
+
+      <div class="w-full overflow-hidden p-1 rounded-2xl bg-slate-950">
+        <div id="sudoku-grid" class="mx-auto bg-slate-950 p-2 rounded-2xl border-2 border-slate-800 grid shadow-2xl transition-all duration-300">
+          </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mt-8">
+        <button onclick="backToMenu()" class="bg-slate-950 hover:bg-slate-800 text-slate-400 font-bold py-3.5 rounded-xl border border-slate-800 transition-all text-sm">Kembali</button>
+        <button onclick="triggerManualRestart()" class="bg-slate-950 hover:bg-indigo-950/40 text-indigo-400 font-bold py-3.5 rounded-xl border border-slate-800 transition-all text-sm">Reset</button>
+      </div>
+    </div>
+
+    <div id="game-modal" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center z-50 p-4">
+      
+      <div id="victory-card" class="hidden w-full max-w-md bg-slate-900 border border-emerald-500/30 rounded-3xl p-8 text-center shadow-2xl animate-fade-in">
+        <div class="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 text-3xl">🏆</div>
+        <h2 class="text-3xl font-black text-emerald-400 uppercase tracking-tight mb-2">VICTORY BLAST!</h2>
+        <p class="text-slate-400 text-xs mb-6">Papan terisi sempurna. Logika berpikir Anda berada di level tertinggi.</p>
+        
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6 flex justify-around font-mono text-sm">
+          <div>
+            <div class="text-[10px] text-slate-500 font-sans font-bold uppercase">MODE GAME</div>
+            <div id="modal-victory-mode" class="text-slate-200 font-bold mt-0.5">-</div>
+          </div>
+          <div class="border-l border-slate-800"></div>
+          <div>
+            <div class="text-[10px] text-slate-500 font-sans font-bold uppercase">WAKTU ANDA</div>
+            <div id="modal-victory-time" class="text-amber-400 font-bold mt-0.5">00:00</div>
+          </div>
+        </div>
+
+        <div id="new-record-badge" class="hidden text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold py-2 px-4 rounded-xl mb-6 tracking-wide uppercase">
+          🎉 REKOR BARU PRIBADI TERCAPAT!
+        </div>
+
+        <button onclick="closeModalAndGoMenu()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-900/20">Selesai & Kembali</button>
+      </div>
+
+      <div id="defeat-card" class="hidden w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-3xl p-8 text-center shadow-2xl animate-fade-in">
+        <div class="w-20 h-20 bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20 text-3xl">💀</div>
+        <h2 class="text-3xl font-black text-rose-500 uppercase tracking-tight mb-2">GAME OVER</h2>
+        <p id="defeat-reason-text" class="text-slate-400 text-xs mb-6">Papan hancur karena Anda melampaui toleransi kesalahan.</p>
+        
+        <button onclick="closeModalAndRestart()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-rose-900/20 mb-3 text-sm">Coba Lagi</button>
+        <button onclick="closeModalAndGoMenu()" class="w-full bg-slate-950 hover:bg-slate-800 text-slate-500 font-bold py-2.5 rounded-xl transition-all border border-slate-800 text-xs">Kembali Ke Menu</button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer class="p-6 text-center text-[10px] text-slate-700 font-bold tracking-widest uppercase border-t border-slate-900">
+    V4.0 Local Engine &bull; Shatter Crash Logic &bull; Multi-Stage Confetti
+  </footer>
+
+  <script>
+    const sudokuTemplates = {
+      "3x3": [[1,2,3],[3,1,2],[2,3,1]],
+      "6x6": [[1,2,3,4,5,6],[4,5,6,1,2,3],[2,3,4,5,6,1],[5,6,1,2,3,4],[3,4,5,6,1,2],[6,1,2,3,4,5]],
+      "9x9": [
+        [5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],
+        [8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],
+        [9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]
+      ]
+    };
+
+    let gameMode = ""; // "casual" atau "timer"
+    let currentSize = ""; // "3x3", "6x6", "9x9"
+    let activeSolution = [], activePuzzle = [];
+    let timerInterval = null, elapsedSeconds = 0, timeLimitSeconds = 0;
+    let mistakes = 0, isGameOver = false;
+
+    document.addEventListener("DOMContentLoaded", loadPersonalBests);
+
+    function loadPersonalBests() {
+      ["3x3", "6x6", "9x9"].forEach(size => {
+        const stored = localStorage.getItem(`sudoku_pb_${size}`);
+        document.getElementById(`pb-${size}`).innerText = stored ? formatTimeStrings(parseInt(stored)) : "--:--";
+      });
+    }
+
+    function formatTimeStrings(totalSecs) {
+      let m = Math.floor(totalSecs / 60), s = totalSecs % 60;
+      return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // Menjalankan Mode Casual biasa
+    function startCasualGame(size) {
+      gameMode = "casual";
+      currentSize = size;
+      initGameEngine();
+    }
+
+    // Menjalankan Mode Tantangan Waktu Acak (Time Attack)
+    function startTimeAttackChallenge() {
+      gameMode = "timer";
+      
+      // Pilih Ukuran Dimensi Secara Acak
+      const sizes = ["3x3", "6x6", "9x9"];
+      currentSize = sizes[Math.floor(Math.random() * sizes.length)];
+      
+      // Hitung Batas Waktu Acak Berdasarkan Ketentuan Range
+      if (currentSize === "3x3") {
+        // 5 s.d 15 Detik
+        timeLimitSeconds = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
+      } else if (currentSize === "6x6") {
+        // 3 s.d 5 Menit (180 s.d 300 Detik)
+        timeLimitSeconds = Math.floor(Math.random() * (300 - 180 + 1)) + 180;
+      } else if (currentSize === "9x9") {
+        // 5 s.d 8 Menit (300 s.d 480 Detik)
+        timeLimitSeconds = Math.floor(Math.random() * (480 - 300 + 1)) + 300;
+      }
+      
+      elapsedSeconds = timeLimitSeconds; // Penghitung mundur mulai dari batas atas
+      initGameEngine();
+    }
+
+    function initGameEngine() {
+      mistakes = 0;
+      isGameOver = false;
+      
+      const grid = document.getElementById("sudoku-grid");
+      grid.classList.remove("animate-board-remuk");
+      
+      document.getElementById("mistake-display").innerText = "0 / 2";
+      document.getElementById("game-size-badge").innerText = `${currentSize} (${gameMode === 'casual' ? 'CASUAL' : 'ATTACK'})`;
+      
+      activeSolution = JSON.parse(JSON.stringify(sudokuTemplates[currentSize]));
+      generatePuzzleLayout();
+      
+      document.getElementById("menu-view").classList.add("hidden");
+      document.getElementById("game-view").classList.remove("hidden");
+      
+      if (gameMode === "casual") {
+        elapsedSeconds = 0;
+        document.getElementById("timer-type-label").innerText = "Waktu Berjalan";
+        document.getElementById("timer-display").innerText = "00:00";
+      } else {
+        document.getElementById("timer-type-label").innerText = "Sisa Waktu";
+        document.getElementById("timer-display").innerText = formatTimeStrings(elapsedSeconds);
+      }
+      
+      runTimerEngine();
+      renderSudokuMatrix();
+    }
+
+    function generatePuzzleLayout() {
+      activePuzzle = JSON.parse(JSON.stringify(activeSolution));
+      let hideProb = currentSize === "3x3" ? 0.4 : (currentSize === "6x6" ? 0.45 : 0.5);
+      for (let r=0; r<activePuzzle.length; r++) {
+        for (let c=0; c<activePuzzle[r].length; c++) {
+          if (Math.random() < hideProb) activePuzzle[r][c] = 0;
+        }
+      }
+    }
+
+    function renderSudokuMatrix() {
+      const grid = document.getElementById("sudoku-grid");
+      grid.innerHTML = "";
+      let size = currentSize === "3x3" ? 3 : (currentSize === "6x6" ? 6 : 9);
+      grid.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+
+      for (let r=0; r<size; r++) {
+        for (let c=0; c<size; c++) {
+          const input = document.createElement("input");
+          input.type = "number";
+          input.id = `c-${r}-${c}`;
+          let classes = "w-10 h-10 sm:w-14 sm:h-14 text-center text-xl font-black border border-slate-950 focus:outline-none transition-all ";
+          
+          if (currentSize === "6x6") {
+            if ((r+1)%2 === 0 && r!==size-1) classes += "border-b-4 border-b-slate-800 ";
+            if ((c+1)%3 === 0 && c!==size-1) classes += "border-r-4 border-r-slate-800 ";
+          } else if (currentSize === "9x9") {
+            if ((r+1)%3 === 0 && r!==size-1) classes += "border-b-4 border-b-slate-800 ";
+            if ((c+1)%3 === 0 && c!==size-1) classes += "border-r-4 border-r-slate-800 ";
+          }
+
+          if (activePuzzle[r][c] !== 0) {
+            input.value = activePuzzle[r][c];
+            input.disabled = true;
+            classes += "bg-slate-900 text-slate-600 font-medium cursor-not-allowed";
+          } else {
+            classes += "bg-slate-900 text-indigo-400 focus:bg-indigo-950/40 font-extrabold";
+            input.addEventListener("input", (e) => handleMatrixInput(e, r, c, size));
+          }
+          input.className = classes;
+          grid.appendChild(input);
+        }
+      }
+    }
+
+    function handleMatrixInput(e, r, c, size) {
+      if (isGameOver) return;
+      let val = parseInt(e.target.value.slice(-1));
+      if (isNaN(val) || val < 1 || val > size) {
+        e.target.value = "";
+        return;
+      }
+      e.target.value = val;
+
+      if (val === activeSolution[r][c]) {
+        activePuzzle[r][c] = val;
+        e.target.classList.remove("cell-wrong");
+        e.target.classList.add("cell-correct");
+        e.target.disabled = true;
+        
+        // Pemicu ledakan kembang api dinamis
+        if (checkIsNumberExhausted(val, size)) {
+          launchMegaExhaustionConfetti(); // Warna-warni masif jika angka habis tersebar
+        } else {
+          launchSingleHitConfetti(); // Standar satu warna
+        }
+        
+        checkWinCondition(size);
+      } else {
+        mistakes++;
+        document.getElementById("mistake-display").innerText = `${mistakes} / 2`;
+        e.target.classList.add("cell-wrong");
+        e.target.value = "";
+        
+        if (mistakes >= 2) {
+          triggerShatterDefeatSequence("MISTAKE");
+        }
+      }
+    }
+
+    function checkIsNumberExhausted(num, size) {
+      let targetCount = 0, currentCount = 0;
+      for (let r=0; r<size; r++) {
+        for (let c=0; c<size; c++) {
+          if (activeSolution[r][c] === num) targetCount++;
+          if (activePuzzle[r][c] === num) currentCount++;
+        }
+      }
+      return targetCount === currentCount;
+    }
+
+    function launchSingleHitConfetti() {
+      confetti({
+        particleCount: 30,
+        spread: 50,
+        origin: { y: 0.7 },
+        colors: ['#6366f1', '#a855f7']
+      });
+    }
+
+    function launchMegaExhaustionConfetti() {
+      let duration = 1.8 * 1000;
+      let end = Date.now() + duration;
+      (function frame() {
+        confetti({ particleCount: 10, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors: ['#f59e0b', '#34d399', '#ec4899', '#3b82f6', '#ffffff'] });
+        confetti({ particleCount: 10, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors: ['#f59e0b', '#34d399', '#ec4899', '#3b82f6', '#ffffff'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
+    }
+
+    function runTimerEngine() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        if (gameMode === "casual") {
+          elapsedSeconds++;
+          document.getElementById("timer-display").innerText = formatTimeStrings(elapsedSeconds);
+        } else {
+          elapsedSeconds--;
+          document.getElementById("timer-display").innerText = formatTimeStrings(elapsedSeconds);
+          if (elapsedSeconds <= 0) {
+            triggerShatterDefeatSequence("TIMEOUT");
+          }
+        }
+      }, 1000);
+    }
+
+    function triggerShatterDefeatSequence(reason) {
+      isGameOver = true;
+      clearInterval(timerInterval);
+      
+      const grid = document.getElementById("sudoku-grid");
+      grid.classList.add("animate-board-remuk");
+
+      setTimeout(() => {
+        const reasonText = document.getElementById("defeat-reason-text");
+        if (reason === "TIMEOUT") {
+          reasonText.innerText = "Papan hancur! Anda kehabisan waktu untuk meretas matriks Sudoku ini.";
+        } else {
+          reasonText.innerText = "Papan hancur! Anda melampaui batas toleransi 2x kesalahan input.";
+        }
+        showCustomOverlayView("defeat");
+      }, 1200);
+    }
+
+    function checkWinCondition(size) {
+      for (let r=0; r<size; r++) {
+        for (let c=0; c<size; c++) {
+          if (activePuzzle[r][c] !== activeSolution[r][c]) return;
+        }
+      }
+      
+      isGameOver = true;
+      clearInterval(timerInterval);
+      
+      // Trigger perayaan kemenangan masif
+      let duration = 3.5 * 1000;
+      let end = Date.now() + duration;
+      (function frame() {
+        confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0, y: 0.6 } });
+        confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1, y: 0.6 } });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
+
+      setTimeout(() => {
+        showCustomOverlayView("victory");
+      }, 600);
+    }
+
+    function showCustomOverlayView(type) {
+      const modal = document.getElementById("game-modal");
+      const victoryCard = document.getElementById("victory-card");
+      const defeatCard = document.getElementById("defeat-card");
+      const recordBadge = document.getElementById("new-record-badge");
+      
+      modal.classList.remove("hidden");
+      recordBadge.classList.add("hidden");
+
+      if (type === "victory") {
+        defeatCard.classList.add("hidden");
+        victoryCard.classList.remove("hidden");
+        
+        document.getElementById("modal-victory-mode").innerText = `${currentSize} (${gameMode.toUpperCase()})`;
+        
+        let finalDisplayTime = 0;
+        if (gameMode === "casual") {
+          finalDisplayTime = elapsedSeconds;
+          document.getElementById("modal-victory-time").innerText = formatTimeStrings(finalDisplayTime);
+          
+          // Cek Rekor Personal Best
+          const currentPB = localStorage.getItem(`sudoku_pb_${currentSize}`);
+          if (!currentPB || finalDisplayTime < parseInt(currentPB)) {
+            localStorage.setItem(`sudoku_pb_${currentSize}`, finalDisplayTime);
+            recordBadge.classList.remove("hidden");
+          }
+        } else {
+          // Untuk mode timer, skor dihitung dari waktu yang berhasil tersisa
+          finalDisplayTime = elapsedSeconds;
+          document.getElementById("modal-victory-time").innerText = `Sisa ${formatTimeStrings(finalDisplayTime)}`;
+        }
+      } else {
+        victoryCard.classList.add("hidden");
+        defeatCard.classList.remove("hidden");
+      }
+    }
+
+    function triggerManualRestart() {
+      if (document.getElementById("sudoku-grid").classList.contains("animate-board-remuk")) return;
+      if (confirm("Ulangi permainan dengan susunan acak baru pada level ini?")) {
+        initGameEngine();
+      }
+    }
+
+    function closeModalAndRestart() {
+      document.getElementById("game-modal").classList.add("hidden");
+      if (gameMode === "casual") {
+        startCasualGame(currentSize);
+      } else {
+        startTimeAttackChallenge();
+      }
+    }
+
+    function closeModalAndGoMenu() {
+      document.getElementById("game-modal").classList.add("hidden");
+      backToMenu();
+    }
+
+    function backToMenu() {
+      if (timerInterval) clearInterval(timerInterval);
+      document.getElementById("game-view").classList.add("hidden");
+      document.getElementById("menu-view").classList.remove("hidden");
+      loadPersonalBests();
+    }
+  </script>
+</body>
+</html>
