@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Curi-Curi Kata</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .retro-font {
+      font-family: 'Press Start 2P', cursive;
+    }
+    /* Mencegah layar HP bergeser/scrolling saat jari menyeret huruf di papan */
+    #wordGrid {
+      touch-action: none; 
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .grid-cell {
+      user-select: none;
+      -webkit-user-select: none;
+      transition: all 0.15s ease;
+    }
+    
+    /* 2D ANIMATIONS & EFFECTS */
+    @keyframes idleBob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .sprite-idle {
+      animation: idleBob 2s infinite ease-in-out;
+    }
+
+    @keyframes heroStrike {
+      0% { transform: translateX(0) scale(1); }
+      25% { transform: translateX(-10px) scale(0.95); }
+      50% { transform: translateX(65px) rotate(12deg) scale(1.05); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    .hero-attack-anim {
+      animation: heroStrike 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    @keyframes enemyStrike {
+      0% { transform: translateX(0) scale(1); }
+      25% { transform: translateX(10px) scale(0.95); }
+      50% { transform: translateX(-65px) rotate(-12deg) scale(1.05); }
+      100% { transform: translateX(0) scale(1); }
+    }
+    .enemy-attack-anim {
+      animation: enemyStrike 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0); }
+      10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 3px); }
+      20%, 40%, 60%, 80% { transform: translate(5px, -3px); }
+    }
+    .shake-anim {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    /* Red flash when taking damage */
+    @keyframes redFlash {
+      0%, 100% { filter: drop-shadow(0 0 0px rgba(239, 68, 68, 0)); }
+      50% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.95)) brightness(1.4); }
+    }
+    .hit-flash {
+      animation: redFlash 0.4s ease-in-out;
+    }
+
+    /* Float damage text */
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-60px) scale(0.7); opacity: 0; }
+    }
+    .damage-text {
+      animation: floatUp 1s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
+    }
+
+    /* Apocalypse background pattern */
+    .bg-apocalypse {
+      background: linear-gradient(135deg, #150202 0%, #290505 50%, #080000 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .bg-apocalypse::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: radial-gradient(circle, rgba(239, 68, 68, 0.12) 1px, transparent 1px);
+      background-size: 16px 16px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500">
+
+  <!-- ================= SOUND MANAGER (Web Audio API) ================= -->
+  <script>
+    const AudioGame = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      },
+      playSelect() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.1);
+      },
+      playSuccess() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); // E5
+        osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16); // G5
+        osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24); // C6
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.4);
+      },
+      playFail() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.25);
+      },
+      playHit() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      },
+      playEnemyHit() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.35);
+      },
+      playVictory() {
+        this.init();
+        const now = this.ctx.currentTime;
+        const playNote = (freq, start, duration) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + start);
+          gain.gain.setValueAtTime(0.08, now + start);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + start);
+          osc.stop(now + start + duration);
+        };
+        playNote(261.63, 0, 0.15); // C4
+        playNote(329.63, 0.15, 0.15); // E4
+        playNote(392.00, 0.3, 0.15); // G4
+        playNote(523.25, 0.45, 0.15); // C5
+        playNote(659.25, 0.6, 0.15); // E5
+        playNote(1046.50, 0.75, 0.5); // C6
+      }
+    };
+  </script>
+
+  <!-- ================= MASTER KOSA KATA DICTIONARY ================= -->
+  <script>
+    const DICTIONARY_RAW = [
+      "BACA", "TULIS", "MAKAN", "MINUM", "TIDUR", "MANDI", "JALAN", "LARI", "LOMPAT", "TERBANG", "BERENANG", "DUDUK", "BERDIRI", "MELIHAT", "MENDENGAR", "MEMASAK", "MENCOCI", "MENULIS", "MEMBACA", "MENYANYI", "MENARI", "BERMAIN", "BELAJAR", "BEKERJA", "BELANJA", "MEMBELI", "MENJUAL", "MEMBAWA", "MELEMPAR", "MENANGKAP", "MENENDANG", "MEMUKUL", "MENARIK", "MENDORONG", "MEMBUKA", "MENUTUP", "MEMILIH", "MENGAMBIL", "MEMBUANG", "MENYIMPAN", "MENCARI", "MENEMUKAN", "MEMBANTU", "MENOLONG", "MEMINJAM", "MEMBERI", "MENERIMA", "MEMINTA", "MENOLAK", "MELEPAS", "MEMAKAI", "MENJAGA", "MERAWAT", "MERUSAK", "MEMPERBAIKI", "MEMBUAT", "MENGGILING", "MEMOTONG", "MEMBELAH", "MENGIKAT", "MENANAM", "MEMANEN", "MENYIRAM", "MEMUPUK", "MENYAPU", "MENGGEPEL", "MENJEMUR", "MENYETRIKA", "MELIPAT", "MELETAKKAN", "MEMINDAH", "MENGGULUNG", "MENAHAN", "MENCOBA", "BERHASIL", "GAGAL", "MENANG", "KALAH", "MEJA", "KURSI", "LEMARI", "KASUR", "BANTAL", "GULING", "SELIMUT", "KELAMBU", "CERMIN", "JENDELA", "PINTU", "ATAP", "DINDING", "LANTAI", "PAGAR", "LAMPU", "KIPAS", "RADIO", "TELEVISI", "TELEPON", "LAPTOP", "KOMPUTER", "KAMERA", "JAMER", "KULKAS", "KOMPOR", "PANCI", "WAJAN", "PIRING", "GELAS", "MANGKUK", "SENDOK", "GARPU", "PISAU", "TALENAN", "TEKO", "EMBER", "GAYUNG", "HANDUK", "SABUN", "SHAMPOO", "SIKAT", "PASTA", "SISIR", "BAJU", "CELANA", "ROK", "JAKET", "KEMEJA", "KAOS", "TOPI", "SEPATU", "SANDAL", "KAOSKAKI", "SARUNGTANGAN", "DASI", "SABUK", "TAS", "DOMPET", "PAYUNG", "KACAMATA", "JAMTANGAN", "KALUNG", "CINCIN", "GELANG", "ANTING", "BUKU", "PENSIL", "PULPEN", "PENGHAPUS", "PENGGARIS", "SPIDOL", "KERTAS", "AMPLOP", "MATERAI", "GUNTING", "STAPLER", "LAKBAN", "JEPITAN", "KEMOCENG", "TIMBA", "SELANG", "KUNCI", "GEMBOK", "OBENG", "TANG", "PALU", "PAKU", "GERGAJI", "BOR", "TANGGA", "SEMEN", "BATA", "PASIR", "BATU", "KAYU", "BESI", "BAJA", "PLASTIK", "KARET", "KACA", "KAIN", "BENANG", "JARUM", "KANCING", "RESLETING", "MAP", "KALENDER", "NOTA", "KARTU", "UANG", "KOIN", "KOPER", "RANSEL", "SAKU", "JAKARTA", "BANDUNG", "SURABAYA", "MEDAN", "SEMARANG", "MAKASSAR", "PALEMBANG", "DENPASAR", "YOGYAKARTA", "SOLO", "MALANG", "BOGOR", "BEKASI", "DEPOK", "TANGERANG", "SERANG", "CILEGON", "SUKABUMI", "CIANJUR", "PURWAKARTA", "CIREBON", "GARUT", "TASIKMALAYA", "CIAMIS", "BANJAR", "MAJALENGKA", "SUMEDANG", "SUBANG", "KARAWANG", "INDRAMAYU", "BREBES", "TEGAL", "PEMALANG", "PEKALONGAN", "BATANG", "KENDAL", "DEMAK", "KUDUS", "PATI", "REMBANG", "BLORA", "GROBOGAN", "SRAGEN", "BOYOLALI", "KLATEN", "SUKOHARJO", "WONOGIRI", "KARANGANYAR", "KEBUMEN", "PURWOREJO", "CILACAP", "BANYUMAS", "PURBALINGGA", "BANJARNEGARA", "WONOSOBO", "TEMANGGUNG", "MAGELANG", "SALATIGA", "AMBARAWA", "UNGARAN", "NGAWI", "MAGETAN", "MADIUN", "PONOROGO", "PACITAN", "TRENGGALEK", "TULUNGAGUNG", "BLITAR", "KEDIRI", "NGANJUK", "JOMBANG", "MOJOKERTO", "SIDOARJO", "GRESIK", "LAMONGAN", "TUBAN", "BOJONEGORO", "PASURUAN", "PROBOLINGGO", "LUMAJANG", "JEMBER", "BONDOWOSO", "SITUBONDO", "BANYUWANGI", "BANGKALAN", "SAMPANG", "PAMEKASAN", "SUMENEP", "SINGARAJA", "GIANYAR", "TABANAN", "KLUNGKUNG", "KARANGASEM", "NEGARA", "BANGLI", "MATARAM", "BIMA", "KUPANG", "ENDE", "MAUMERE", "PONTIANAK", "SINGKAWANG", "SAMBAS", "SANGGAU", "SINTANG", "KETAPANG", "BANJARMASIN", "BANJARBARU", "MARTAPURA", "RANTAU", "KANDANGAN", "BARABAI", "AMUNTAI", "TANJUNG", "PELAIHARI", "MARABAHAN", "BATULICIN", "KOTABARU", "SAMARINDA", "BALIKPAPAN", "BONTANG", "TARAKAN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MANADO", "BITUNG", "TOMOHON", "GORONTALO", "PALU", "POSO", "KENDARI", "BAUBAU", "TOKYO", "SEOUL", "BEIJING", "BANGKOK", "MANILA", "LONDON", "PARIS", "BERLIN", "ROMA", "MADRID", "MOSKOW", "KAIRO", "SYDNEY", "NEWYORK", "DUBAI", "SOEKARNO", "HATTA", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN", "KARTINI", "SUDIRMAN", "DIPONEGORO", "GAJAHMADA", "JAYABAYA", "HAYAMWURUK", "RAFFI", "NAGITA", "BAIM", "PAULA", "DEDDY", "CORBUZIER", "SULE", "ANDRE", "TAULANY", "VINCENT", "DESTA", "TULUS", "RAISA", "ISYANA", "AFGAN", "ROSSA", "JUDIKA", "ARILASSO", "ONCE", "IWANFALS", "CHRISYE", "AGNEZMO", "ANANG", "ASHANTY", "AUREL", "ATTA", "THARIQ", "FUJI", "FADIL", "JAIDI", "RADITYA", "DIKA", "ERNEST", "PRAKASA", "PANDJI", "BABE", "CABITA", "MARSHAL", "JEFRI", "NICHOL", "REZA", "RAHADIAN", "VINO", "BASTIAN", "IQBAAL", "RAMADHAN", "ANGGA", "YUNANDA", "SYIFA", "HADJU", "PRILLY", "LAUDYA", "BELLA", "DIAN", "SASTRO", "NICHOLAS", "SAPUTRA", "LUNA", "MAYA", "GADING", "MARTEN", "GISEL", "GEMPI", "CIPUNG", "RAYYANZA", "RAFATHAR", "ARHAN", "ASNAWI", "ERNANDO", "HUBNER", "STRUICK", "IVAN", "GUNAWAN", "RUBEN", "ONSU", "SARWENDAH", "BETRAND", "PETO", "DENNY", "CAGUR", "SUMARGO", "UNTUNG", "ARIE", "KRITING", "INDAH", "PERMATASARI", "GEPAMUNGKAS", "BENU", "MARLO", "MARCO", "JOVI", "LOPEZ", "ANDOVI", "SKINNY", "CHANDRA", "LIOW", "JEROME", "POLIN", "JESS", "LIMIT", "SISCA", "KOHL", "ALSHAD", "AHMAD", "TIARA", "ANDINI", "LYODRA", "GINTING", "ZIVA", "MAGNOLYA", "KEISYA", "LEVRONKA", "MAHALINI", "RIZKY", "FEBIAN", "PUTRI", "DELINA", "RIZWAN", "FERDI", "AZIZAH", "SALSHA", "DEVANO", "DANENDRA", "IIS", "DAHLIA", "KING", "NASSAR", "SOIMAH", "INUL", "DARATISTA", "DEWI", "PERSSIK", "LESTI", "KEJORA", "RIZKY", "BILLAR", "FILDAN", "KRESEK", "SENTER", "LILIN", "KOREK", "CELENGAN", "MACOTA", "SYAL", "MASKER", "HELM", "PARFUM", "BEDAK", "LIPSTIK", "BLENDER", "MIXER", "OVEN", "TABUNG", "SERBET", "TISSUE", "MOUSE", "KEYBOARD", "LAYAR", "LENSA", "TRIPOD", "HAPE", "CASAN", "BATERAI", "KABEL", "SAKLAR", "SPEAKER", "GITAR", "PIANO", "DRUM", "BIOLA", "SULING", "PIANIKA", "RELA", "JANGKA", "STAMPEL", "TINTA", "LEM", "KAPAS", "KAPUR", "CAT", "KUAS", "SEPAKBOLA", "RAKET", "KOK", "GAWANG", "JARING", "MATRAS", "TRUK", "BUS", "PERAHU", "ROKET", "STASIUN", "JEMBATAN", "TROTOAR", "HALTE", "RAMBU", "MELUKIS", "MENGGAMBAR", "BERBICARA", "TERTAWA", "MENANGIS", "TERSENYUM", "BERPIKIR", "BERANGKAT", "PULANG", "DATANG", "PERGI", "MASUK", "KELUAR", "NAIK", "TURUN", "BERHENTI", "LANJUT", "SETUJU", "INGAT", "LUPA", "TAHU", "FAHAM", "MENGERTI", "BERDOA", "IBADAH", "SHOLAT", "SEDEKAH", "PUASA", "MEMELUK", "CIUM", "JABAT", "SALAM", "TEGUR", "SAPA", "PANGGIL", "BISIK", "TERIAK", "SORAK", "ADU", "TANDING", "DEBAT", "DISKUSI", "NGOBROL", "CERITA", "DONGENG", "KISAH", "CATAT", "CETAK", "COPY", "KETIK", "PASTE", "CORET", "WARNAI", "TEMPEL", "RAKIT", "BONGKAR", "PASANG", "STEL", "UKUR", "TIMBANG", "HITUNG", "JUMLAH", "BAGI", "KALI", "KURANG", "TAMBAH", "SORTIR", "AMBON", "JAYAPURA", "SORONG", "MERAUKE", "LAMPUNG", "BENGKULU", "JAMBI", "PADANG", "ACEH", "RIAU", "BATAM", "BANGKA", "BELITUNG", "SHANGHAI", "SINGAPURA", "KUALALUMPUR", "AMSTERDAM", "RIYADH", "MEKKAH", "MADINAH", "ISTANBUL", "ANKARA", "WASHINGTON", "LOSANGELES", "CHICAGO", "TORONTO", "RIO", "BUENOSAIRES", "MUMBAI", "DELHI", "DHAKA", "KARACHI", "BAGHDAD", "TEHRAN", "ATENA", "LIMA", "JUSTIN", "BIEBER", "JUNGKOOK", "JIMIN", "V", "SUGA", "JHOPE", "JIN", "RM", "BLACKPINK", "LISA", "JENNIE", "JISOO", "ROSE", "CRISTIANO", "RONALDO", "LIONEL", "MESSI", "NEYMAR", "MBAPPE", "HAALAND", "SALAH", "ROONEY", "BECKHAM", "ZIDANE", "MARADONA", "PELE", "JORDAN", "LEBRON", "KOBE", "CURRY", "ELON", "MUSK", "MARK", "ZUCKERBERG", "BILL", "GATES", "STEVE", "JOBS", "ALBERT", "EINSTEIN", "NEWTON", "GALILEO", "TESLA", "EDISON", "ARISTOTELES", "PLATO", "SOCRATES", "SHAKESPEARE", "MOZART", "BEETHOVEN", "CHOPIN", "PICASSO", "VINCI", "COLUMBUS", "MANGKUBUMI", "THAMRIN", "ATTA", "HALILINTAR", "GIAS", "GIBRAN"
+    ];
+
+    // Prosesing dictionary dinamis memisahkan EASY, MEDIUM, dan HARD
+    const KATA_MASTER = { EASY: [], MEDIUM: [], HARD: [] };
+    
+    // Normalisasi dan saring database kosa kata
+    DICTIONARY_RAW.forEach(item => {
+      const cleanWord = item.replace(/[^A-Za-z]/g, '').toUpperCase();
+      if (cleanWord.length >= 3) {
+        if (cleanWord.length <= 5) {
+          KATA_MASTER.EASY.push(cleanWord);
+        } else if (cleanWord.length <= 8) {
+          KATA_MASTER.MEDIUM.push(cleanWord);
+        } else {
+          KATA_MASTER.HARD.push(cleanWord);
+        }
+      }
+    });
+
+    // Cegah bila ada slot kosong
+    if (KATA_MASTER.EASY.length === 0) KATA_MASTER.EASY = ["BACA", "MEJA", "BUKU"];
+    if (KATA_MASTER.MEDIUM.length === 0) KATA_MASTER.MEDIUM = ["JAKARTA", "BANDUNG", "LEMARI"];
+    if (KATA_MASTER.HARD.length === 0) KATA_MASTER.HARD = ["KEMERDEKAAN", "KOMPUTER", "TELEVISI"];
+  </script>
+
+  <!-- ================= TOP NAVIGATION / HEADER ================= -->
+  <header class="bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500" id="mainHeader">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <!-- SVG Siluet Kota Hijau -->
+        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
+          <path d="M19 2C19 2 17 2 17 4V20H15V12H13V20H11V8H9V20H7V14H5V20H3V22H21V2H19ZM9 10H11V12H9V10ZM9 14H11V16H9V14ZM15 14H17V16H15V14ZM15 18H17V20H15V18ZM19 6H21V8H19V6ZM19 10H21V12H19V10ZM13 14H15V16H13V14ZM13 18H15V20H13V18Z"/>
+        </svg>
+        <span class="text-xl font-extrabold tracking-wide uppercase">Curi-Curi Kata</span>
+      </div>
+      <div class="flex space-x-2">
+        <button onclick="toggleLeaderboardModal()" class="bg-emerald-700 hover:bg-emerald-800 text-xs px-3 py-2 rounded-lg font-semibold flex items-center transition">
+          🏆 Papan Peringkat
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="flex-grow flex flex-col justify-center items-center p-4 max-w-6xl w-full mx-auto">
+    
+    <!-- ================= SCENE 1: MENU UTAMA (GREEN & WHITE URBAN) ================= -->
+    <div id="menuScene" class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-emerald-100 overflow-hidden transition-all transform duration-300">
+      
+      <!-- Eco-Urban City Banner -->
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white relative overflow-hidden flex flex-col items-center justify-center text-center">
+        <div class="absolute inset-0 opacity-10">
+          <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="none">
+            <path d="M0,400 L80,380 L160,420 L240,350 L320,390 L400,320 L480,380 L560,340 L640,410 L720,370 L800,430 L800,600 L0,600 Z" fill="#ffffff" />
+          </svg>
+        </div>
+        <h1 class="text-4xl font-black tracking-tight mb-2 uppercase drop-shadow-md">Curi-Curi Kata</h1>
+        <p class="text-emerald-50 text-sm max-w-md">Kumpulkan kata rahasia yang tersembunyi di kota hijau atau taklukkan monster apokaliptik pembawa kehancuran!</p>
+      </div>
+
+      <!-- Settings & Controls Form -->
+      <div class="p-6 md:p-8 space-y-6">
+        <!-- Input Nama -->
+        <div>
+          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Nama Pencuri Kata:</label>
+          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none font-semibold text-slate-700" placeholder="Masukkan nama Anda...">
+        </div>
+
+        <!-- Opsi Tampilkan Daftar Kata (Toggle) -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+          <div>
+            <label class="block text-slate-800 font-bold text-sm">Daftar Kata yang Dicari</label>
+            <span class="text-xs text-slate-500" id="hintVisibilityText">Aktif: Daftar kata target ditampilkan jelas.</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer select-none">
+            <input type="checkbox" id="showWordToggle" checked class="sr-only peer" onchange="toggleOptionText()">
+            <div class="w-14 h-7 bg-slate-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+          </label>
+        </div>
+
+        <!-- Pilihan Kesulitan (Difficulty) -->
+        <div>
+          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Pilih Kesulitan:</label>
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-emerald-50 border-emerald-500 text-emerald-700">
+              <span class="text-base">EASY</span>
+              <span class="text-[10px] font-normal opacity-75">Grid 8x8</span>
+            </button>
+            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-white border-slate-200 text-slate-600 hover:border-emerald-300">
+              <span class="text-base">MEDIUM</span>
+              <span class="text-[10px] font-normal opacity-75">Grid 12x12</span>
+            </button>
+            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-white border-slate-200 text-slate-600 hover:border-emerald-300">
+              <span class="text-base">HARD</span>
+              <span class="text-[10px] font-normal opacity-75">Grid 15x15</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pilihan Mode Game -->
+        <div>
+          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Pilih Mode Permainan:</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Casual -->
+            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-emerald-50 border-emerald-500">
+              <div class="p-2 rounded-lg bg-emerald-100 text-emerald-700">☕</div>
+              <div>
+                <div class="font-extrabold text-emerald-900">CASUAL</div>
+                <div class="text-xs text-emerald-700">Santai tanpa batasan waktu atau beban stres.</div>
+              </div>
+            </button>
+
+            <!-- Speedrun -->
+            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
+              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⚡</div>
+              <div>
+                <div class="font-extrabold text-slate-900">SPEEDRUN</div>
+                <div class="text-xs text-slate-600">Selesaikan papan secepat mungkin! Waktu bertambah.</div>
+              </div>
+            </button>
+
+            <!-- Time Challenge -->
+            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
+              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⏱️</div>
+              <div>
+                <div class="font-extrabold text-slate-900">TIME CHALLENGE</div>
+                <div class="text-xs text-slate-600">Selesaikan sebelum waktu dari sistem habis.</div>
+              </div>
+            </button>
+
+            <!-- Turn Base Battle -->
+            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
+              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⚔️</div>
+              <div>
+                <div class="font-extrabold text-slate-900">TURN BASE BATTLE</div>
+                <div class="text-xs text-slate-600">Sistem RPG seru! Hajar monster dengan mencuri kata!</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Start Button -->
+        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-6 rounded-xl text-lg transition duration-200 shadow-lg transform active:scale-95 flex items-center justify-center space-x-2">
+          <span>MULAI PETUALANGAN</span>
+          <span>🚀</span>
+        </button>
+      </div>
+
+      <!-- Eco-City Siluet Footer -->
+      <div class="bg-emerald-50 px-6 py-4 flex justify-between items-center border-t border-emerald-100 text-xs text-emerald-700">
+        <span>© 2026 Curi-Curi Kata • Edisi Premium</span>
+        <span>Aman & Ramah Lingkungan 🌱</span>
+      </div>
+    </div>
+
+    <!-- ================= SCENE 2: GAMEPLAY (DYNAMIC STYLING) ================= -->
+    <div id="gameplayScene" class="hidden w-full">
+      
+      <!-- Grid Utama Membagi Layout Menjadi Kiri (RPG + Panel) dan Kanan (Papan Kata) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start">
+        
+        <!-- KOLOM KIRI (Lebar 5/12): RPG Battle Arena (Jika aktif) & Panel Skor/Kata -->
+        <div class="lg:col-span-5 space-y-4">
+          
+          <!-- ============ RPG BATTLE ARENA (Turn-Based Arena) ============ -->
+          <div id="battleArena" class="hidden w-full rounded-2xl bg-apocalypse p-4 shadow-2xl relative border-2 border-red-950 overflow-hidden">
+            <!-- Floating damage container -->
+            <div id="damageOverlay" class="absolute inset-0 pointer-events-none z-30"></div>
+
+            <!-- Sky & Apocalypse Horizon Background -->
+            <div class="absolute bottom-0 left-0 right-0 h-16 opacity-15 pointer-events-none flex justify-between items-end px-2">
+              <svg class="h-10 fill-red-800" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <path d="M0,50 L0,20 L10,15 L15,25 L25,10 L35,30 L40,5 L50,25 L65,10 L80,35 L90,15 L100,20 L100,50 Z"/>
+              </svg>
+              <svg class="h-14 fill-red-950" viewBox="0 0 100 50" preserveAspectRatio="none">
+                <path d="M0,50 L5,30 L15,10 L30,40 L45,15 L60,35 L75,5 L90,40 L100,30 L100,50 Z"/>
+              </svg>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 relative z-10 py-1">
+              
+              <!-- Player Column -->
+              <div class="flex flex-col items-center justify-center">
+                <span class="text-[9px] retro-font text-emerald-400 mb-1">HERO (KITA)</span>
+                
+                <!-- Animated Hero Sprite Container -->
+                <div id="heroSpriteContainer" class="sprite-idle relative w-16 h-20 flex items-center justify-center mb-1 transition-all">
+                  <svg id="heroSprite" class="w-full h-full" viewBox="0 0 100 120">
+                    <!-- Hair/Helmet -->
+                    <path d="M 28 40 Q 50 10 72 40 Z" fill="#3b82f6"/>
+                    <rect x="35" y="30" width="30" height="15" fill="#1d4ed8" rx="2" />
+                    <!-- Head -->
+                    <circle cx="50" cy="45" r="20" fill="#fbcfe8"/>
+                    <!-- Eyes -->
+                    <circle cx="43" cy="42" r="3.5" fill="#1e2937"/>
+                    <circle cx="57" cy="42" r="3.5" fill="#1e2937"/>
+                    <circle cx="45" cy="40" r="1.2" fill="#ffffff"/>
+                    <circle cx="59" cy="40" r="1.2" fill="#ffffff"/>
+                    <path d="M 45 52 Q 50 56 55 52" stroke="#1e2937" stroke-width="2.5" fill="none"/>
+                    <!-- Body Armor -->
+                    <rect x="32" y="65" width="36" height="40" rx="6" fill="#10b981" stroke="#047857" stroke-width="2"/>
+                    <path d="M 50 65 L 50 105" stroke="#047857" stroke-width="2"/>
+                    <!-- Shield -->
+                    <path d="M 12 70 Q 24 65 24 85 Q 24 105 12 100 Z" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+                    <!-- Animated Sword -->
+                    <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 65px 95px;">
+                      <path d="M 68 95 L 88 50 L 96 54 L 76 99 Z" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
+                      <rect x="62" y="90" width="18" height="6" rx="1" fill="#f59e0b" transform="rotate(-25 62 90)"/>
+                      <rect x="66" y="95" width="6" height="15" rx="1" fill="#78350f" transform="rotate(-25 66 95)"/>
+                    </g>
+                  </svg>
+                </div>
+                
+                <!-- HP Bar Player -->
+                <div class="w-full max-w-[120px] bg-neutral-800 rounded-full h-3 overflow-hidden border border-neutral-700">
+                  <div id="playerHpBar" class="bg-emerald-500 h-full w-full transition-all duration-300"></div>
+                </div>
+                <div class="text-[9px] retro-font text-white mt-1" id="playerHpText">100 / 100 HP</div>
+              </div>
+
+              <!-- Enemy Column -->
+              <div class="flex flex-col items-center justify-center">
+                <span class="text-[9px] retro-font text-red-500 mb-1">MONSTER</span>
+                
+                <!-- Animated Enemy Sprite Container -->
+                <div id="enemySpriteContainer" class="sprite-idle relative w-16 h-20 flex items-center justify-center mb-1 transition-all">
+                  <svg id="enemySprite" class="w-full h-full" viewBox="0 0 100 120">
+                    <!-- Horns -->
+                    <path d="M 22 35 Q 8 10 26 15" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
+                    <path d="M 78 35 Q 92 10 74 15" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
+                    <!-- Head -->
+                    <polygon points="20,35 80,35 90,75 50,105 10,75" fill="#991b1b" stroke="#450a0a" stroke-width="3"/>
+                    <!-- Angry Eyebrows -->
+                    <path d="M 28 44 L 44 50" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M 72 44 L 56 50" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
+                    <!-- Glowing Demon Eyes -->
+                    <polygon points="30,52 42,55 32,62" fill="#000000"/>
+                    <circle cx="35" cy="56" r="3" fill="#facc15"/>
+                    <polygon points="70,52 58,55 68,62" fill="#000000"/>
+                    <circle cx="65" cy="56" r="3" fill="#facc15"/>
+                    <!-- Spiky Mouth with long Fangs -->
+                    <rect x="34" y="78" width="32" height="12" fill="#450a0a" rx="2" />
+                    <polygon points="38,78 42,88 46,78" fill="#ffffff"/>
+                    <polygon points="54,78 58,88 62,78" fill="#ffffff"/>
+                  </svg>
+                </div>
+                
+                <!-- HP Bar Enemy -->
+                <div class="w-full max-w-[120px] bg-neutral-800 rounded-full h-3 overflow-hidden border border-neutral-700">
+                  <div id="enemyHpBar" class="bg-red-600 h-full w-full transition-all duration-300"></div>
+                </div>
+                <div class="text-[9px] retro-font text-white mt-1" id="enemyHpText">100 / 100 HP</div>
+              </div>
+
+            </div>
+
+            <!-- Combat Log Banner -->
+            <div class="mt-2 bg-black/60 p-1.5 rounded-lg text-center border border-red-900/40">
+              <p id="combatLog" class="text-[9px] text-amber-400 retro-font leading-relaxed">BERSIAPLAH! Monster menyerang setiap 15 detik!</p>
+            </div>
+          </div>
+
+          <!-- ============ SCORE & STATS PANEL ============ -->
+          <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col justify-between" id="scorePanel">
+            
+            <div class="flex items-center justify-between border-b pb-3 mb-3">
+              <div>
+                <h3 class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Pemain</h3>
+                <p class="text-base font-extrabold text-slate-800" id="gamePlayerName">Pemain</p>
+              </div>
+              <div class="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-[11px] font-bold" id="badgeDifficulty">
+                EASY
+              </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100" id="boxScore">
+                <span class="block text-[10px] text-slate-400 font-bold uppercase">Skor</span>
+                <span class="text-xl font-black text-emerald-600 animate-pulse" id="currentScore">0</span>
+              </div>
+              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100" id="boxTimer">
+                <span class="block text-[10px] text-slate-400 font-bold uppercase" id="timerLabel">Waktu</span>
+                <span class="text-xl font-black text-slate-800" id="gameTimer">00:00</span>
+              </div>
+            </div>
+
+            <!-- List Target Words -->
+            <div>
+              <h4 class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-2">Temukan Kata Berikut:</h4>
+              <div id="targetWordList" class="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto pr-1">
+                <!-- Diisi Dinamis oleh JS -->
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-4 pt-3 border-t flex space-x-2">
+              <button onclick="surrenderGame()" class="flex-1 py-1.5 px-3 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 font-bold text-xs transition">
+                🏳️ Menyerah
+              </button>
+              <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-1.5 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs transition">
+                🔄 Reset Papan
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- KOLOM KANAN (Lebar 7/12): Board Game (Compact Screen) -->
+        <div class="lg:col-span-7 flex justify-center">
+          <div class="bg-white rounded-2xl p-4 shadow-lg border border-slate-200 select-none w-full max-w-[450px]" id="gridBoardContainer">
+            
+            <!-- Grid Wrapper (Lebih Ringkas & Padat) -->
+            <div id="wordGrid" class="grid mx-auto gap-0.5 p-1.5 bg-slate-100 rounded-xl cursor-pointer select-none">
+              <!-- Diisi Dinamis oleh JS -->
+            </div>
+
+            <!-- Touch / Selection Info Hint -->
+            <p class="text-center text-[11px] text-slate-400 mt-3" id="boardHintText">
+              💡 Seret huruf pertama menuju huruf terakhir secara mendatar, tegak, maupun miring.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500" id="mainFooter">
+    <p>Game **Curi-Curi Kata** didesain untuk asah otak & kecepatan motorik tangan.</p>
+  </footer>
+
+  <!-- ================= MODAL: LEADERBOARD ================= -->
+  <div id="leaderboardModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all">
+      <div class="flex justify-between items-center border-b pb-4 mb-4">
+        <h3 class="text-xl font-bold text-slate-800 flex items-center">
+          🏆 Skor Terbaik Global
+        </h3>
+        <button onclick="toggleLeaderboardModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+      </div>
+      
+      <div class="space-y-3 max-h-[350px] overflow-y-auto" id="leaderboardContent">
+        <div class="text-center text-slate-500 py-6">Memuat data dari server...</div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t">
+        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition">
+          Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: GAME OVER / VICTORY ================= -->
+  <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all text-center">
+      <div id="resultEmoji" class="text-6xl mb-4">🎉</div>
+      <h3 id="resultTitle" class="text-2xl font-black text-slate-800 mb-2">Hebat! Kamu Menang!</h3>
+      <p id="resultText" class="text-slate-600 mb-6">Kamu berhasil mencuri semua kata dengan gemilang.</p>
+
+      <div class="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-100">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <span class="block text-xs text-slate-400 font-bold uppercase">Skor Akhir</span>
+            <span id="resultScore" class="text-2xl font-black text-emerald-600">0</span>
+          </div>
+          <div>
+            <span class="block text-xs text-slate-400 font-bold uppercase">Durasi Main</span>
+            <span id="resultTime" class="text-2xl font-black text-slate-800">00:00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition">
+          Kembali ke Menu Utama
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAME ENGINE & LOGIC SCRIPT ================= -->
+  <script>
+    // State Game Utama
+    let GAME_STATE = {
+      playerName: "Pemain Baru",
+      difficulty: "EASY", 
+      mode: "CASUAL", 
+      gridSize: 8,
+      words: [],
+      foundWords: [],
+      grid: [],
+      timer: 0,
+      timerInterval: null,
+      score: 0,
+      showWordList: true, // Menyimpan setting visibilitas kata
+      
+      // Khusus Turn Base Mode
+      playerHp: 100,
+      enemyHp: 100,
+      turnInterval: null,
+      combatTimer: 0,
+
+      // Interaction State
+      isSelecting: false,
+      startCell: null,
+      selectedCells: []
+    };
+
+    // Sinkronisasi teks opsi toggle menu utama
+    function toggleOptionText() {
+      const toggle = document.getElementById('showWordToggle');
+      const text = document.getElementById('hintVisibilityText');
+      if (toggle.checked) {
+        text.innerText = "Aktif: Daftar kata target ditampilkan jelas.";
+      } else {
+        text.innerText = "Non-Aktif: Cari secara mandiri (kata disembunyikan).";
+      }
+      AudioGame.playSelect();
+    }
+
+    // Pilihan Kesulitan
+    function selectDifficulty(diff) {
+      GAME_STATE.difficulty = diff;
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+      });
+      const selectedBtn = document.getElementById(`btnDiff${diff}`);
+      selectedBtn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+      selectedBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+      AudioGame.playSelect();
+    }
+
+    // Pilihan Mode Game
+    function selectMode(mode) {
+      GAME_STATE.mode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+      });
+      const selectedBtn = document.getElementById(`btnMode${mode}`);
+      selectedBtn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
+      selectedBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+      AudioGame.playSelect();
+    }
+
+    // Mengambil kata acak berdasarkan difficulty dari database kosa kata raksasa
+    function getRandomWords(difficulty) {
+      const pool = KATA_MASTER[difficulty];
+      const count = difficulty === 'EASY' ? 5 : (difficulty === 'MEDIUM' ? 8 : 10);
+      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    }
+
+    // Mempersiapkan Game
+    function startGame() {
+      AudioGame.init();
+      const inputName = document.getElementById('playerNameInput').value.trim();
+      GAME_STATE.playerName = inputName ? inputName : "Pencuri Kata";
+      GAME_STATE.showWordList = document.getElementById('showWordToggle').checked;
+      
+      // Set Grid Size
+      if (GAME_STATE.difficulty === "EASY") GAME_STATE.gridSize = 8;
+      else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.gridSize = 12;
+      else GAME_STATE.gridSize = 15;
+
+      // Reset State
+      GAME_STATE.score = 0;
+      GAME_STATE.foundWords = [];
+      GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
+
+      // Transisi Desain & Animasi Arena
+      setupAesthetics();
+
+      // Bangun Grid
+      buildGridBoard();
+
+      // Jalankan Timer
+      startTimerEngine();
+
+      // Munculkan Scene Gameplay
+      document.getElementById('menuScene').classList.add('hidden');
+      document.getElementById('gameplayScene').classList.remove('hidden');
+      
+      // Update data di panel
+      document.getElementById('gamePlayerName').innerText = GAME_STATE.playerName;
+      document.getElementById('badgeDifficulty').innerText = GAME_STATE.difficulty;
+      document.getElementById('currentScore').innerText = GAME_STATE.score;
+    }
+
+    // Menata ulang UI / Skema Warna berdasarkan mode
+    function setupAesthetics() {
+      const header = document.getElementById('mainHeader');
+      const footer = document.getElementById('mainFooter');
+      const scorePanel = document.getElementById('scorePanel');
+      const container = document.getElementById('gridBoardContainer');
+      const arena = document.getElementById('battleArena');
+      const boardHint = document.getElementById('boardHintText');
+      const boxScore = document.getElementById('boxScore');
+      const boxTimer = document.getElementById('boxTimer');
+
+      if (GAME_STATE.mode === 'TURN_BASE') {
+        // Mode Apokaliptik Peperangan (Merah Tua, Hitam, Abu Gelap)
+        document.body.className = "bg-neutral-950 text-slate-100 min-h-screen flex flex-col transition-colors duration-500";
+        header.className = "bg-red-950 text-red-100 shadow-xl p-4 border-b border-red-900 transition-colors duration-500";
+        footer.className = "bg-red-950 text-red-500 text-center py-6 text-sm mt-8 border-t border-red-900 transition-colors duration-500";
+        scorePanel.className = "bg-neutral-900 rounded-2xl p-5 shadow-2xl border border-red-900/50 flex flex-col justify-between text-slate-100";
+        container.className = "bg-neutral-900 rounded-2xl p-4 shadow-2xl border border-red-900/50 select-none w-full max-w-[450px]";
+        boardHint.className = "text-center text-[11px] text-red-400 mt-3";
+        boxScore.className = "bg-neutral-850 p-2.5 rounded-xl border border-red-950";
+        boxTimer.className = "bg-neutral-850 p-2.5 rounded-xl border border-red-950";
+        
+        // Ganti warna teks & list
+        document.getElementById('gamePlayerName').className = "text-base font-extrabold text-red-400";
+        document.getElementById('badgeDifficulty').className = "bg-red-900/50 text-red-300 px-3 py-1 rounded-full text-[10px] font-bold";
+        
+        arena.classList.remove('hidden');
+
+        // Reset HP sistem tempur
+        GAME_STATE.playerHp = 100;
+        GAME_STATE.enemyHp = 100;
+        updateHpBars();
+        document.getElementById('combatLog').innerText = "💀 KOTA DALAM BAHAYA! Monster siap menerjang setiap 15 detik!";
+        
+        // Mulai serangan monster
+        startCombatEngine();
+
+      } else {
+        // Mode Normal (Hijau & Putih Menyenangkan)
+        document.body.className = "bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500";
+        header.className = "bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500";
+        footer.className = "bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500";
+        scorePanel.className = "bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col justify-between text-slate-800";
+        container.className = "bg-white rounded-2xl p-4 shadow-lg border border-slate-200 select-none w-full max-w-[450px]";
+        boardHint.className = "text-center text-[11px] text-slate-400 mt-3";
+        boxScore.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100";
+        boxTimer.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100";
+
+        document.getElementById('gamePlayerName').className = "text-base font-extrabold text-slate-800";
+        document.getElementById('badgeDifficulty').className = "bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold";
+
+        arena.classList.add('hidden');
+        stopCombatEngine();
+      }
+    }
+
+    // ================= GRID GENERATOR ALGORITHM =================
+    function buildGridBoard() {
+      const size = GAME_STATE.gridSize;
+      
+      // Inisialisasi grid kosong
+      GAME_STATE.grid = Array(size).fill(null).map(() => Array(size).fill(''));
+
+      // Letakkan semua kata ke dalam grid
+      GAME_STATE.words.forEach(word => {
+        let placed = false;
+        let attempts = 0;
+        const maxAttempts = 150;
+
+        // Arah peletakan kata berdasarkan tingkat kesulitan
+        let directions = [];
+        if (GAME_STATE.difficulty === "EASY") {
+          directions = [
+            [0, 1],  // Kanan
+            [1, 0]   // Bawah
+          ];
+        } else if (GAME_STATE.difficulty === "MEDIUM") {
+          directions = [
+            [0, 1], [1, 0],   // Kanan, Bawah
+            [0, -1], [-1, 0]  // Kiri, Atas
+          ];
+        } else {
+          directions = [
+            [0, 1], [1, 0], [0, -1], [-1, 0], // Mendatar & Tegak
+            [1, 1], [-1, -1], [1, -1], [-1, 1] // Diagonal
+          ];
+        }
+
+        while (!placed && attempts < maxAttempts) {
+          const dir = directions[Math.floor(Math.random() * directions.length)];
+          const r = Math.floor(Math.random() * size);
+          const c = Math.floor(Math.random() * size);
+
+          if (canPlaceWord(word, r, c, dir)) {
+            placeWord(word, r, c, dir);
+            placed = true;
+          }
+          attempts++;
+        }
+      });
+
+      // Isi kotak kosong dengan huruf acak
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (GAME_STATE.grid[r][c] === '') {
+            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            GAME_STATE.grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+          }
+        }
+      }
+
+      // Render Grid ke HTML
+      renderGridHTML();
+      // Render Target Words ke Panel Samping
+      renderTargetWordsHTML();
+    }
+
+    function canPlaceWord(word, row, col, dir) {
+      const size = GAME_STATE.gridSize;
+      const dr = dir[0];
+      const dc = dir[1];
+
+      for (let i = 0; i < word.length; i++) {
+        const nr = row + i * dr;
+        const nc = col + i * dc;
+
+        if (nr < 0 || nr >= size || nc < 0 || nc >= size) return false;
+        if (GAME_STATE.grid[nr][nc] !== '' && GAME_STATE.grid[nr][nc] !== word[i]) return false;
+      }
+      return true;
+    }
+
+    function placeWord(word, row, col, dir) {
+      const dr = dir[0];
+      const dc = dir[1];
+      for (let i = 0; i < word.length; i++) {
+        const nr = row + i * dr;
+        const nc = col + i * dc;
+        GAME_STATE.grid[nr][nc] = word[i];
+      }
+    }
+
+    // Merender Grid ke Tampilan Web (Lebih Padat)
+    function renderGridHTML() {
+      const gridElement = document.getElementById('wordGrid');
+      gridElement.innerHTML = '';
+      
+      const size = GAME_STATE.gridSize;
+      gridElement.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+
+      const cellBgClass = GAME_STATE.mode === 'TURN_BASE' 
+        ? "bg-neutral-800 text-slate-100 hover:bg-red-900/30 border-neutral-700" 
+        : "bg-white text-slate-800 hover:bg-emerald-50 border-slate-200";
+
+      // Ukuran font menyusut secara dinamis sesuai ukuran grid agar tidak meluber
+      let fontSizeClass = "text-xs sm:text-sm";
+      if (size === 12) fontSizeClass = "text-[11px] sm:text-xs";
+      if (size === 15) fontSizeClass = "text-[9px] sm:text-[11px]";
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const letter = GAME_STATE.grid[r][c];
+          const cell = document.createElement('div');
+          cell.className = `grid-cell aspect-square flex items-center justify-center font-bold ${fontSizeClass} border rounded cursor-pointer ${cellBgClass}`;
+          cell.innerText = letter;
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+
+          // Event Mouse (Desktop)
+          cell.addEventListener('mousedown', (e) => startSelection(r, c));
+          cell.addEventListener('mouseenter', (e) => continueSelection(r, c));
+          
+          gridElement.appendChild(cell);
+        }
+      }
+
+      // Event Mouse End (Desktop)
+      window.addEventListener('mouseup', endSelection);
+
+      // Event Touch (Mobile)
+      gridElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+      gridElement.addEventListener('touchmove', handleTouchMove, { passive: false });
+      gridElement.addEventListener('touchend', endSelection);
+    }
+
+    // Merender Daftar Kata Target di Panel Samping
+    function renderTargetWordsHTML() {
+      const targetList = document.getElementById('targetWordList');
+      targetList.innerHTML = '';
+
+      GAME_STATE.words.forEach(word => {
+        const isFound = GAME_STATE.foundWords.includes(word);
+        const badge = document.createElement('span');
+        
+        if (isFound) {
+          // Kata Ditemukan (Selalu Terbuka)
+          badge.className = "px-2 py-1 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 line-through opacity-60 transition-all";
+          badge.innerText = word;
+        } else {
+          // Kata Belum Ditemukan
+          if (GAME_STATE.showWordList) {
+            // Tunjukkan kosa kata
+            if (GAME_STATE.mode === 'TURN_BASE') {
+              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-neutral-800 text-red-400 border border-red-950 transition-all";
+            } else {
+              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all";
+            }
+            badge.innerText = word;
+          } else {
+            // Sembunyikan kata (🔒 Enkripsi Rahasia)
+            if (GAME_STATE.mode === 'TURN_BASE') {
+              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-red-950/40 text-red-500 border border-red-900/40 select-none animate-pulse";
+            } else {
+              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-slate-200 text-slate-400 select-none";
+            }
+            badge.innerText = `🔒 Rahasia (${word.length} Huruf)`;
+          }
+        }
+        targetList.appendChild(badge);
+      });
+    }
+
+    // ================= TOUCH & DRAG WORD SELECTION ENGINE =================
+    function startSelection(r, c) {
+      GAME_STATE.isSelecting = true;
+      GAME_STATE.startCell = { r, c };
+      GAME_STATE.selectedCells = [{ r, c }];
+      highlightSelection();
+      AudioGame.playSelect();
+    }
+
+    function continueSelection(r, c) {
+      if (!GAME_STATE.isSelecting) return;
+      
+      const start = GAME_STATE.startCell;
+      const dr = r - start.r;
+      const dc = c - start.c;
+
+      const absR = Math.abs(dr);
+      const absC = Math.abs(dc);
+
+      if (dr === 0 || dc === 0 || absR === absC) {
+        const stepR = dr === 0 ? 0 : dr / absR;
+        const stepC = dc === 0 ? 0 : dc / absC;
+        const steps = Math.max(absR, absC);
+        
+        const path = [];
+        for (let i = 0; i <= steps; i++) {
+          path.push({
+            r: start.r + i * stepR,
+            c: start.c + i * stepC
+          });
+        }
+        GAME_STATE.selectedCells = path;
+        highlightSelection();
+      }
+    }
+
+    function endSelection() {
+      if (!GAME_STATE.isSelecting) return;
+      GAME_STATE.isSelecting = false;
+
+      // Ambil susunan huruf
+      let selectedWord = "";
+      GAME_STATE.selectedCells.forEach(cell => {
+        selectedWord += GAME_STATE.grid[cell.r][cell.c];
+      });
+
+      // Balik urutan huruf
+      const reversedWord = selectedWord.split('').reverse().join('');
+
+      let matchedWord = null;
+      if (GAME_STATE.words.includes(selectedWord) && !GAME_STATE.foundWords.includes(selectedWord)) {
+        matchedWord = selectedWord;
+      } else if (GAME_STATE.words.includes(reversedWord) && !GAME_STATE.foundWords.includes(reversedWord)) {
+        matchedWord = reversedWord;
+      }
+
+      if (matchedWord) {
+        GAME_STATE.foundWords.push(matchedWord);
+        AudioGame.playSuccess();
+        
+        markCellsAsFound(GAME_STATE.selectedCells);
+        renderTargetWordsHTML();
+        handleSuccessEvent(matchedWord);
+
+        if (GAME_STATE.foundWords.length === GAME_STATE.words.length) {
+          handleBoardClear();
+        }
+      } else {
+        AudioGame.playFail();
+        clearTemporaryHighlight();
+      }
+    }
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (element && element.dataset.row) {
+        const r = parseInt(element.dataset.row);
+        const c = parseInt(element.dataset.col);
+        startSelection(r, c);
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      if (!GAME_STATE.isSelecting) return;
+      const touch = e.touches[0];
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (element && element.dataset.row) {
+        const r = parseInt(element.dataset.row);
+        const c = parseInt(element.dataset.col);
+        continueSelection(r, c);
+      }
+    }
+
+    function highlightSelection() {
+      clearTemporaryHighlight();
+      GAME_STATE.selectedCells.forEach(cell => {
+        const el = getCellElement(cell.r, cell.c);
+        if (el) {
+          if (GAME_STATE.mode === 'TURN_BASE') {
+            el.classList.add('bg-red-800/80', 'text-white', 'scale-105');
+          } else {
+            el.classList.add('bg-emerald-400/80', 'text-white', 'scale-105');
+          }
+        }
+      });
+    }
+
+    function clearTemporaryHighlight() {
+      const size = GAME_STATE.gridSize;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const el = getCellElement(r, c);
+          if (el && !el.classList.contains('found-cell')) {
+            el.classList.remove(
+              'bg-emerald-400/80', 'bg-red-800/80', 'text-white', 'scale-105',
+              'bg-emerald-500/30', 'bg-red-900/30'
+            );
+          }
+        }
+      }
+    }
+
+    function markCellsAsFound(cells) {
+      cells.forEach(cell => {
+        const el = getCellElement(cell.r, cell.c);
+        if (el) {
+          el.classList.add('found-cell');
+          if (GAME_STATE.mode === 'TURN_BASE') {
+            el.className = `grid-cell aspect-square flex items-center justify-center font-bold border rounded cursor-pointer bg-red-600 text-white border-red-500 found-cell`;
+          } else {
+            el.className = `grid-cell aspect-square flex items-center justify-center font-bold border rounded cursor-pointer bg-emerald-500 text-white border-emerald-400 found-cell`;
+          }
+        }
+      });
+    }
+
+    function getCellElement(r, c) {
+      return document.querySelector(`[data-row='${r}'][data-col='${c}']`);
+    }
+
+    // ================= TIMER ENGINE =================
+    function startTimerEngine() {
+      if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
+
+      const timerDisplay = document.getElementById('gameTimer');
+      const timerLabel = document.getElementById('timerLabel');
+
+      if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
+        GAME_STATE.timer = 0;
+        timerLabel.innerText = "DURASI MAIN";
+        timerDisplay.innerText = "Santai";
+      } else if (GAME_STATE.mode === "SPEEDRUN") {
+        GAME_STATE.timer = 0;
+        timerLabel.innerText = "DURASI JALAN";
+        timerDisplay.innerText = "00:00";
+        
+        GAME_STATE.timerInterval = setInterval(() => {
+          GAME_STATE.timer++;
+          timerDisplay.innerText = formatTime(GAME_STATE.timer);
+        }, 1000);
+
+      } else if (GAME_STATE.mode === "TIME_CHALLENGE") {
+        timerLabel.innerText = "SISA WAKTU";
+        
+        // Atur range waktu dinamis
+        if (GAME_STATE.difficulty === "EASY") {
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 30; // 30 - 90 Detik
+        } else if (GAME_STATE.difficulty === "MEDIUM") {
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 120; // 120 - 180 Detik
+        } else {
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 240; // 240 - 300 Detik
+        }
+
+        timerDisplay.innerText = formatTime(GAME_STATE.timer);
+
+        GAME_STATE.timerInterval = setInterval(() => {
+          GAME_STATE.timer--;
+          timerDisplay.innerText = formatTime(GAME_STATE.timer);
+
+          if (GAME_STATE.timer <= 0) {
+            clearInterval(GAME_STATE.timerInterval);
+            endGame(false, "Sisa waktu Anda sudah habis! Kota berhasil diambil alih oleh kegelapan.");
+          }
+        }, 1000);
+      }
+    }
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    // ================= CO-ORDINATED TURN BASE COMBAT ENGINE =================
+    function startCombatEngine() {
+      if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
+      GAME_STATE.combatTimer = 15; // Jeda waktu monster memukul kini 15 Detik
+      
+      GAME_STATE.turnInterval = setInterval(() => {
+        GAME_STATE.combatTimer--;
+        
+        if (GAME_STATE.combatTimer <= 0) {
+          triggerEnemyAttack();
+          GAME_STATE.combatTimer = 15;
+        } else {
+          document.getElementById('combatLog').innerText = `👿 Monster bersiap menghantam dalam ${GAME_STATE.combatTimer} detik!`;
+        }
+      }, 1000);
+    }
+
+    // Serangan Monster (Hero berguncang dan tersulut efek merah hancur)
+    function triggerEnemyAttack() {
+      AudioGame.playEnemyHit();
+      GAME_STATE.playerHp = Math.max(0, GAME_STATE.playerHp - 10);
+      updateHpBars();
+
+      const arena = document.getElementById('battleArena');
+      const heroSpriteContainer = document.getElementById('heroSpriteContainer');
+      const enemySpriteContainer = document.getElementById('enemySpriteContainer');
+
+      // Jalankan animasi menerjang musuh
+      enemySpriteContainer.classList.remove('sprite-idle');
+      enemySpriteContainer.classList.add('enemy-attack-anim');
+
+      setTimeout(() => {
+        // Hero menerima hantaman keras
+        heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
+        arena.classList.add('shake-anim');
+        createDamageFloatEffect(heroSpriteContainer, "-10 HP", "text-red-500");
+      }, 300);
+
+      setTimeout(() => {
+        // Kembalikan ke sedia kala
+        enemySpriteContainer.classList.remove('enemy-attack-anim');
+        enemySpriteContainer.classList.add('sprite-idle');
+        heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
+        arena.classList.remove('shake-anim');
+      }, 700);
+
+      document.getElementById('combatLog').innerText = "💥 Monster kota meluncurkan ledakan keras! Kamu kehilangan 10 HP!";
+
+      if (GAME_STATE.playerHp <= 0) {
+        stopCombatEngine();
+        endGame(false, "Pertahananmu runtuh! Kamu kalah dalam pertempuran apokaliptik.");
+      }
+    }
+
+    // Serangan Hero (Hero bergerak menerjang musuh ke arah kanan)
+    function triggerPlayerAttack() {
+      AudioGame.playHit();
+      GAME_STATE.enemyHp = Math.max(0, GAME_STATE.enemyHp - 5);
+      updateHpBars();
+
+      const heroSpriteContainer = document.getElementById('heroSpriteContainer');
+      const enemySpriteContainer = document.getElementById('enemySpriteContainer');
+      const sword = document.getElementById('heroSwordG');
+
+      // Gerakan menerjang hero
+      heroSpriteContainer.classList.remove('sprite-idle');
+      heroSpriteContainer.classList.add('hero-attack-anim');
+      sword.style.transform = "rotate(75deg)";
+
+      setTimeout(() => {
+        // Monster terkena hantaman pedang hero
+        enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
+        createDamageFloatEffect(enemySpriteContainer, "-5 HP", "text-amber-400");
+      }, 300);
+
+      setTimeout(() => {
+        // Selesai aksi, kembalikan ke idle
+        heroSpriteContainer.classList.remove('hero-attack-anim');
+        heroSpriteContainer.classList.add('sprite-idle');
+        sword.style.transform = "rotate(0deg)";
+        enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
+      }, 750);
+
+      document.getElementById('combatLog').innerText = "⚔️ Tebasan maut mendarat mulus! Monster kota terluka 5 HP!";
+
+      if (GAME_STATE.enemyHp <= 0) {
+        stopCombatEngine();
+        AudioGame.playVictory();
+        endGame(true, "Luar biasa! Monster legendaris pembuat hancur berhasil kamu taklukkan!");
+      }
+    }
+
+    function updateHpBars() {
+      document.getElementById('playerHpBar').style.width = `${GAME_STATE.playerHp}%`;
+      document.getElementById('playerHpText').innerText = `${GAME_STATE.playerHp} / 100 HP`;
+
+      document.getElementById('enemyHpBar').style.width = `${GAME_STATE.enemyHp}%`;
+      document.getElementById('enemyHpText').innerText = `${GAME_STATE.enemyHp} / 100 HP`;
+    }
+
+    function createDamageFloatEffect(targetElement, text, colorClass) {
+      const container = document.getElementById('damageOverlay');
+      const rect = targetElement.getBoundingClientRect();
+      const parentRect = container.getBoundingClientRect();
+
+      const el = document.createElement('div');
+      el.className = `absolute font-black text-[15px] retro-font ${colorClass} damage-text z-50`;
+      el.innerText = text;
+
+      el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 15}px`;
+      el.style.top = `${rect.top - parentRect.top}px`;
+
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    function stopCombatEngine() {
+      if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
+    }
+
+    // ================= EVENTS HANDLER =================
+    function handleSuccessEvent(word) {
+      let points = 10;
+      if (GAME_STATE.difficulty === 'MEDIUM') points = 15;
+      if (GAME_STATE.difficulty === 'HARD') points = 25;
+
+      GAME_STATE.score += points;
+      document.getElementById('currentScore').innerText = GAME_STATE.score;
+
+      if (GAME_STATE.mode === 'TURN_BASE') {
+        triggerPlayerAttack();
+      }
+    }
+
+    function handleBoardClear() {
+      if (GAME_STATE.mode === 'TURN_BASE') {
+        document.getElementById('combatLog').innerText = "🌟 Papan Tercuri Bersih! Merestrukturisasi Papan Baru...";
+        setTimeout(() => {
+          GAME_STATE.foundWords = [];
+          GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
+          buildGridBoard();
+        }, 1000);
+      } else {
+        endGame(true, "Hebat! Semua kata rahasia perkotaan berhasil kamu sikat habis!");
+      }
+    }
+
+    function regenerateBoardBtn() {
+      AudioGame.playSelect();
+      GAME_STATE.foundWords = [];
+      buildGridBoard();
+    }
+
+    // ================= END GAME STATE =================
+    function endGame(isVictory, message) {
+      if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
+      stopCombatEngine();
+
+      const modal = document.getElementById('resultModal');
+      const title = document.getElementById('resultTitle');
+      const text = document.getElementById('resultText');
+      const scoreEl = document.getElementById('resultScore');
+      const timeEl = document.getElementById('resultTime');
+      const emoji = document.getElementById('resultEmoji');
+
+      title.innerText = isVictory ? "HEBAT! KAMU MENANG!" : "GAME OVER!";
+      text.innerText = message;
+      scoreEl.innerText = GAME_STATE.score;
+      emoji.innerText = isVictory ? "🏆" : "☠️";
+
+      if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
+        timeEl.innerText = "Santai";
+      } else {
+        timeEl.innerText = formatTime(GAME_STATE.timer);
+      }
+
+      // Kirim hasil ke server google skrip / simpan lokal
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((response) => {
+            console.log("Leaderboard tersinkronisasi.");
+          })
+          .saveHighScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
+      } else {
+        saveLocalScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function surrenderGame() {
+      endGame(false, "Anda memilih untuk menyerah dan meninggalkan peperangan.");
+    }
+
+    function restartToMenu() {
+      document.getElementById('resultModal').classList.add('hidden');
+      document.getElementById('gameplayScene').classList.add('hidden');
+      document.getElementById('menuScene').classList.remove('hidden');
+      setupAestheticsNormalMenu();
+    }
+
+    function setupAestheticsNormalMenu() {
+      document.body.className = "bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500";
+      document.getElementById('mainHeader').className = "bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500";
+      document.getElementById('mainFooter').className = "bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500";
+    }
+
+    // ================= LOCAL LEADERBOARD FALLBACK =================
+    function saveLocalScore(name, score, mode, diff) {
+      let scores = localStorage.getItem('localLeaderboard');
+      scores = scores ? JSON.parse(scores) : [];
+      scores.push({ nama: name, score, mode, difficulty: diff, tanggal: new Date().toLocaleDateString('id-ID') });
+      scores.sort((a, b) => b.score - a.score);
+      localStorage.setItem('localLeaderboard', JSON.stringify(scores.slice(0, 10)));
+    }
+
+    function toggleLeaderboardModal() {
+      AudioGame.playSelect();
+      const modal = document.getElementById('leaderboardModal');
+      const content = document.getElementById('leaderboardContent');
+
+      if (modal.classList.contains('hidden')) {
+        modal.classList.remove('hidden');
+        content.innerHTML = '<div class="text-center text-slate-500 py-6">Menghubungkan ke pusat server...</div>';
+
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(renderScores)
+            .getLeaderboard();
+        } else {
+          const localScores = localStorage.getItem('localLeaderboard');
+          renderScores(localScores ? JSON.parse(localScores) : []);
+        }
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function renderScores(scores) {
+      const content = document.getElementById('leaderboardContent');
+      content.innerHTML = '';
+
+      if (!scores || scores.length === 0) {
+        content.innerHTML = '<div class="text-center text-slate-500 py-6">Belum ada rekor tercatat. Jadilah yang pertama!</div>';
+        return;
+      }
+
+      scores.forEach((entry, idx) => {
+        const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}.`));
+        const row = document.createElement('div');
+        row.className = "flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 hover:bg-slate-100 transition";
+        row.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="font-extrabold text-base">${medal}</span>
+            <div>
+              <div class="font-bold text-slate-800">${entry.nama}</div>
+              <div class="text-[10px] text-slate-400 uppercase tracking-widest">${entry.mode} • ${entry.difficulty}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-black text-emerald-600 text-base">${entry.score} pts</div>
+            <div class="text-[9px] text-slate-400">${entry.tanggal}</div>
+          </div>
+        `;
+        content.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>
