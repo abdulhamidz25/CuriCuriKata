@@ -2,15 +2,13 @@
 <html lang="id" class="h-full overflow-hidden">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Curi-Curi Kata</title>
-  <!-- Tailwind CSS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Curi-Curi Kata: Arcade Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Outfit:wght@400;600;900&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -20,27 +18,18 @@
     .mono-font {
       font-family: 'Share Tech Mono', monospace;
     }
-    .logo-font {
-      font-family: 'Bungee', cursive;
+
+    /* Double retro-border for true arcade feel */
+    .arcade-border {
+      border: 4px solid #1e293b;
+      box-shadow: 0px 0px 0px 4px #10b981, 0px 0px 15px rgba(16,185,129,0.3);
+    }
+    .dark .arcade-border {
+      border: 4px solid #0f172a;
+      box-shadow: 0px 0px 0px 4px #059669, 0px 0px 25px rgba(5,150,105,0.4);
     }
 
-    /* 3D Game Logo Style */
-    .game-logo {
-      font-family: 'Bungee', cursive;
-      text-shadow: 
-        3px 3px 0px #047857, 
-        5px 5px 0px #064e3b, 
-        7px 7px 15px rgba(0,0,0,0.5);
-    }
-    .game-logo-red {
-      font-family: 'Bungee', cursive;
-      text-shadow: 
-        3px 3px 0px #b91c1c, 
-        5px 5px 0px #7f1d1d, 
-        7px 7px 15px rgba(0,0,0,0.7);
-    }
-
-    /* Papan Grid No-Scroll & Swipe Locking */
+    /* Word board locks */
     #wordGrid {
       touch-action: none; 
       user-select: none;
@@ -49,9 +38,9 @@
     .grid-cell {
       user-select: none;
       -webkit-user-select: none;
-      transition: all 0.1s ease;
+      transition: background-color 0.1s, transform 0.05s;
     }
-    
+
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -60,82 +49,91 @@
       scrollbar-width: none;
     }
 
-    /* 2D ANIMATIONS & EFFECTS */
+    /* HERO & ENEMY ANIMATIONS */
     @keyframes idleBob {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+      50% { transform: translateY(-5px); }
     }
     .sprite-idle {
-      animation: idleBob 1.5s infinite ease-in-out;
+      animation: idleBob 1.4s infinite ease-in-out;
     }
 
     @keyframes heroStrike {
       0% { transform: translateX(0) scale(1); }
-      15% { transform: translateX(-12px) scale(0.95); }
-      45% { transform: translateX(65px) rotate(12deg) scale(1.15); }
+      15% { transform: translateX(-20px) scale(0.9); }
+      45% { transform: translateX(90px) rotate(10deg) scale(1.2); }
       100% { transform: translateX(0) scale(1); }
     }
     .hero-attack-anim {
-      animation: heroStrike 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+      animation: heroStrike 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes enemyStrike {
       0% { transform: translateX(0) scale(1); }
-      15% { transform: translateX(12px) scale(0.95); }
-      45% { transform: translateX(-65px) rotate(-12deg) scale(1.15); }
+      15% { transform: translateX(20px) scale(0.9); }
+      45% { transform: translateX(-90px) rotate(-10deg) scale(1.2); }
       100% { transform: translateX(0) scale(1); }
     }
     .enemy-attack-anim {
-      animation: enemyStrike 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+      animation: enemyStrike 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     @keyframes shake {
       0%, 100% { transform: translate(0, 0); }
-      10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 2px); }
-      20%, 40%, 60%, 80% { transform: translate(4px, -2px); }
+      20%, 60% { transform: translate(-6px, 4px) rotate(-1deg); }
+      40%, 80% { transform: translate(6px, -4px) rotate(1deg); }
     }
     .shake-anim {
-      animation: shake 0.35s ease-in-out;
+      animation: shake 0.3s ease-in-out;
     }
 
-    /* Red flash when taking damage */
-    @keyframes redFlash {
-      0%, 100% { filter: drop-shadow(0 0 0px rgba(239, 68, 68, 0)); }
-      50% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.95)) brightness(1.4); }
+    @keyframes hitFlash {
+      0%, 100% { filter: drop-shadow(0 0 0px rgba(239, 68, 68, 0)) brightness(1); }
+      50% { filter: drop-shadow(0 0 15px rgba(239, 68, 68, 1)) brightness(1.8); }
     }
     .hit-flash {
-      animation: redFlash 0.35s ease-in-out;
+      animation: hitFlash 0.3s ease-in-out;
     }
 
-    /* Float damage text */
     @keyframes floatUp {
       0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-50px) scale(0.75); opacity: 0; }
+      100% { transform: translateY(-60px) scale(0.7); opacity: 0; }
     }
     .damage-text {
-      animation: floatUp 0.85s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
+      animation: floatUp 0.9s forwards cubic-bezier(0.075, 0.82, 0.165, 1);
     }
 
-    /* Lightning Flash Effect - Cycles every 3.5 seconds */
+    /* Dramatic Lightning - Rapid double flashes every 3.5 seconds */
     @keyframes lightningFlash {
-      0%, 88%, 92%, 96%, 100% { opacity: 0; background-color: rgba(255, 255, 255, 0); }
-      89%, 91%, 93%, 95% { opacity: 0.55; background-color: rgba(235, 245, 255, 0.95); filter: brightness(1.5); }
+      0%, 85%, 89%, 93%, 100% { opacity: 0; }
+      86%, 88% { opacity: 0.8; background-color: rgba(224, 242, 254, 0.95); }
+      90%, 92% { opacity: 0.95; background-color: rgba(255, 255, 255, 1); }
     }
     .lightning-layer {
       animation: lightningFlash 3.5s infinite;
     }
 
-    /* Ruined City Backdrop Colors */
+    /* Apocalypse Skyline Background */
     .bg-apocalypse {
-      background: linear-gradient(180deg, #070000 0%, #150202 50%, #030000 100%);
+      background: linear-gradient(180deg, #05050a 0%, #100a12 50%, #030305 100%);
       position: relative;
       overflow: hidden;
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500">
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe select-none">
 
-  <!-- ================= SOUND MANAGER (Web Audio API) ================= -->
+  <div class="fixed top-3 right-4 z-50 flex items-center space-x-2">
+    <button onclick="toggleTheme()" class="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-emerald-800 p-2 rounded-xl text-slate-700 dark:text-emerald-400 hover:scale-105 active:scale-95 transition-all shadow-md">
+      <svg id="themeSunIcon" class="w-4.5 h-4.5 hidden" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 11-2 0V3a1 1 0 011-1zm4 2.243a1 1 0 01.015 1.4 L13.6 6.057a1 1 0 11-1.414-1.414l1.414-1.414A1 1 0 0114 4.243zM16.757 8a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1zm-2.757 4.757a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 010-1.414zM10 16.757a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.757-2.757a1 1 0 010 1.414l-1.414 1.414a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zM3.243 8a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1zM6.057 4.243a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414L6.057 5.657a1 1 0 010-1.414zM10 6a4 4 0 100 8 4 4 0 000-8z" />
+      </svg>
+      <svg id="themeMoonIcon" class="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+      </svg>
+    </button>
+  </div>
+
   <script>
     const AudioGame = {
       ctx: null,
@@ -150,13 +148,13 @@
         const gain = this.ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        osc.stop(this.ctx.currentTime + 0.08);
       },
       playSuccess() {
         this.init();
@@ -168,11 +166,11 @@
         osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
         osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24);
         gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.4);
+        osc.stop(this.ctx.currentTime + 0.35);
       },
       playFail() {
         this.init();
@@ -180,41 +178,41 @@
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.25);
-      },
-      playHit() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
         osc.stop(this.ctx.currentTime + 0.2);
       },
+      playHit() {
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.18);
+      },
       playEnemyHit() {
         this.init();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.35);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.35);
+        osc.stop(this.ctx.currentTime + 0.3);
       },
       playVictory() {
         this.init();
@@ -231,17 +229,16 @@
           osc.start(now + start);
           osc.stop(now + start + duration);
         };
-        playNote(261.63, 0, 0.12);
-        playNote(329.63, 0.12, 0.12);
-        playNote(392.00, 0.24, 0.12);
-        playNote(523.25, 0.36, 0.12);
-        playNote(659.25, 0.48, 0.12);
-        playNote(1046.50, 0.6, 0.4);
+        playNote(261.63, 0, 0.1);
+        playNote(329.63, 0.1, 0.1);
+        playNote(392.00, 0.2, 0.1);
+        playNote(523.25, 0.3, 0.1);
+        playNote(659.25, 0.4, 0.1);
+        playNote(1046.50, 0.5, 0.4);
       }
     };
   </script>
 
-  <!-- ================= MASTER KOSA KATA DICTIONARY ================= -->
   <script>
     const DICTIONARY_RAW = [
       "BACA", "TULIS", "MAKAN", "MINUM", "TIDUR", "MANDI", "JALAN", "LARI", "LOMPAT", "TERBANG", "BERENANG", "DUDUK", "BERDIRI", "MELIHAT", "MENDENGAR", "MEMASAK", "MENCOCI", "MENULIS", "MEMBACA", "MENYANYI", "MENARI", "BERMAIN", "BELAJAR", "BEKERJA", "BELANJA", "MEMBELI", "MENJUAL", "MEMBAWA", "MELEMPAR", "MENANGKAP", "MENENDANG", "MEMUKUL", "MENARIK", "MENDORONG", "MEMBUKA", "MENUTUP", "MEMILIH", "MENGGILING", "MEMOTONG", "MEMBELAH", "MENGIKAT", "MENANAM", "MEMANEN", "MENYIRAM", "MEMUPUK", "MENYAPU", "MENGGEPEL", "MENJEMUR", "MENYETRIKA", "MELIPAT", "MELETAKKAN", "MEMINDAH", "MENGGULUNG", "MENAHAN", "MENCOBA", "BERHASIL", "GAGAL", "MENANG", "KALAH", "MEJA", "KURSI", "LEMARI", "KASUR", "BANTAL", "GULING", "SELIMUT", "KELAMBU", "CERMIN", "JENDELA", "PINTU", "ATAP", "DINDING", "LANTAI", "PAGAR", "LAMPU", "KIPAS", "RADIO", "TELEVISI", "TELEPON", "LAPTOP", "KOMPUTER", "KAMERA", "JAMER", "KULKAS", "KOMPOR", "PANCI", "WAJAN", "PIRING", "GELAS", "MANGKUK", "SENDOK", "GARPU", "PISAU", "TALENAN", "TEKO", "EMBER", "GAYUNG", "HANDUK", "SABUN", "SHAMPOO", "SIKAT", "PASTA", "SISIR", "BAJU", "CELANA", "ROK", "JAKET", "KEMEJA", "KAOS", "TOPI", "SEPATU", "SANDAL", "KAOSKAKI", "SARUNGTANGAN", "DASI", "SABUK", "TAS", "DOMPET", "PAYUNG", "KACAMATA", "JAMTANGAN", "KALUNG", "CINCIN", "GELANG", "ANTING", "BUKU", "PENSIL", "PULPEN", "PENGHAPUS", "PENGGARIS", "SPIDOL", "KERTAS", "AMPLOP", "MATERAI", "GUNTING", "STAPLER", "LAKBAN", "JEPITAN", "KEMOCENG", "TIMBA", "SELANG", "KUNCI", "GEMBOK", "OBENG", "TANG", "PALU", "PAKU", "GERGAJI", "BOR", "TANGGA", "SEMEN", "BATA", "PASIR", "BATU", "KAYU", "BESI", "BAJA", "PLASTIK", "KARET", "KACA", "KAIN", "BENANG", "JARUM", "KANCING", "RESLETING", "MAP", "KALENDER", "NOTA", "KARTU", "UANG", "KOIN", "KOPER", "RANSEL", "SAKU", "JAKARTA", "BANDUNG", "SURABAYA", "MEDAN", "SEMARANG", "MAKASSAR", "PALEMBANG", "DENPASAR", "YOGYAKARTA", "SOLO", "MALANG", "BOGOR", "BEKASI", "DEPOK", "TANGERANG", "SERANG", "CILEGON", "SUKABUMI", "CIANJUR", "PURWAKARTA", "CIREBON", "GARUT", "TASIKMALAYA", "CIAMIS", "BANJAR", "MAJALENGKA", "SUMEDANG", "SUBANG", "KARAWANG", "INDRAMAYU", "BREBES", "TEGAL", "PEMALANG", "PEKALONGAN", "BATANG", "KENDAL", "DEMAK", "KUDUS", "PATI", "REMBANG", "BLORA", "GROBOGAN", "SRAGEN", "BOYOLALI", "KLATEN", "SUKOHARJO", "WONOGIRI", "KARANGANYAR", "KEBUMEN", "PURWOREJO", "CILACAP", "BANYUMAS", "PURBALINGGA", "BANJARNEGARA", "WONOSOBO", "TEMANGGUNG", "MAGELANG", "SALATIGA", "AMBARAWA", "UNGARAN", "NGAWI", "MAGETAN", "MADIUN", "PONOROGO", "PACITAN", "TRENGGALEK", "TULUNGAGUNG", "BLITAR", "KEDIRI", "NGANJUK", "JOMBANG", "MOJOKERTO", "SIDOARJO", "GRESIK", "LAMONGAN", "TUBAN", "BOJONEGORO", "PASURUAN", "PROBOLINGGO", "LUMAJANG", "JEMBER", "BONDOWOSO", "SITUBONDO", "BANYUWANGI", "BANGKALAN", "SAMPANG", "PAMEKASAN", "SUMENEP", "SINGARAJA", "GIANYAR", "TABANAN", "KLUNGKUNG", "KARANGASEM", "NEGARA", "BANGLI", "MATARAM", "BIMA", "KUPANG", "ENDE", "MAUMERE", "PONTIANAK", "SINGKAWANG", "SAMBAS", "SANGGAU", "SINTANG", "KETAPANG", "BANJARMASIN", "BANJARBARU", "MARTAPURA", "RANTAU", "KANDANGAN", "BARABAI", "AMUNTAI", "TANJUNG", "PELAIHARI", "MARABAHAN", "BATULICIN", "KOTABARU", "SAMARINDA", "BALIKPAPAN", "BONTANG", "TARAKAN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MANADO", "BITUNG", "TOMOHON", "GORONTALO", "PALU", "POSO", "KENDARI", "BAUBAU", "TOKYO", "SEOUL", "BEIJING", "BANGKOK", "MANILA", "LONDON", "PARIS", "BERLIN", "ROMA", "MADRID", "MOSKOW", "KAIRO", "SYDNEY", "NEWYORK", "DUBAI", "SOEKARNO", "HATTA", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN", "KARTINI", "SUDIRMAN", "DIPONEGORO", "GAJAHMADA", "JAYABAYA", "HAYAMWURUK", "RAFFI", "NAGITA", "BAIM", "PAULA", "DEDDY", "CORBUZIER", "SULE", "ANDRE", "TAULANY", "VINCENT", "DESTA", "TULUS", "RAISA", "ISYANA", "AFGAN", "ROSSA", "JUDIKA", "ARILASSO", "ONCE", "IWANFALS", "CHRISYE", "AGNEZMO", "ANANG", "ASHANTY", "AUREL", "ATTA", "THARIQ", "FUJI", "FADIL", "JAIDI", "RADITYA", "DIKA", "ERNEST", "PRAKASA", "PANDJI", "BABE", "CABITA", "MARSHAL", "JEFRI", "NICHOL", "REZA", "RAHADIAN", "VINO", "BASTIAN", "IQBAAL", "RAMADHAN", "ANGGA", "YUNANDA", "SYIFA", "HADJU", "PRILLY", "LAUDYA", "BELLA", "DIAN", "SASTRO", "NICHOLAS", "SAPUTRA", "LUNA", "MAYA", "GADING", "MARTEN", "GISEL", "GEMPI", "CIPUNG", "RAYYANZA", "RAFATHAR", "ARHAN", "ASNAWI", "ERNANDO", "HUBNER", "STRUICK", "IVAN", "GUNAWAN", "RUBEN", "ONSU", "SARWENDAH", "BETRAND", "PETO", "DENNY", "CAGUR", "SUMARGO", "UNTUNG", "ARIE", "KRITING", "INDAH", "PERMATASARI", "GEPAMUNGKAS", "BENU", "MARLO", "MARCO", "JOVI", "LOPEZ", "ANDOVI", "SKINNY", "CHANDRA", "LIOW", "JEROME", "POLIN", "JESS", "LIMIT", "SISCA", "KOHL", "ALSHAD", "AHMAD", "TIARA", "ANDINI", "LYODRA", "GINTING", "ZIVA", "MAGNOLYA", "KEISYA", "LEVRONKA", "MAHALINI", "RIZKY", "FEBIAN", "PUTRI", "DELINA", "RIZWAN", "FERDI", "AZIZAH", "SALSHA", "DEVANO", "DANENDRA", "IIS", "DAHLIA", "KING", "NASSAR", "SOIMAH", "INUL", "DARATISTA", "DEWI", "PERSSIK", "LESTI", "KEJORA", "RIZKY", "BILLAR", "FILDAN", "KRESEK", "SENTER", "LILIN", "KOREK", "CELENGAN", "MACOTA", "SYAL", "MASKER", "HELM", "PARFUM", "BEDAK", "LIPSTIK", "BLENDER", "MIXER", "OVEN", "TABUNG", "SERBET", "TISSUE", "MOUSE", "KEYBOARD", "LAYAR", "LENSA", "TRIPOD", "HAPE", "CASAN", "BATERAI", "KABEL", "SAKLAR", "SPEAKER", "GITAR", "PIANO", "DRUM", "BIOLA", "SULING", "PIANIKA", "RELA", "JANGKA", "STAMPEL", "TINTA", "LEM", "KAPAS", "KAPUR", "CAT", "KUAS", "SEPAKBOLA", "RAKET", "KOK", "GAWANG", "JARING", "MATRAS", "TRUK", "BUS", "PERAHU", "ROKET", "STASIUN", "JEMBATAN", "TROTOAR", "HALTE", "RAMBU", "MELUKIS", "MENGGAMBAR", "BERBICARA", "TERTAWA", "MENANGIS", "TERSENYUM", "BERPIKIR", "BERANGKAT", "PULANG", "DATANG", "PERGI", "MASUK", "KELUAR", "NAIK", "TURUN", "BERHENTI", "LANJUT", "SETUJU", "INGAT", "LUPA", "TAHU", "FAHAM", "MENGERTI", "BERDOA", "IBADAH", "SHOLAT", "SEDEKAH", "PUASA", "MEMELUK", "CIUM", "JABAT", "SALAM", "TEGUR", "SAPA", "PANGGIL", "BISIK", "TERIAK", "SORAK", "ADU", "TANDING", "DEBAT", "DISKUSI", "NGOBROL", "CERITA", "DONGENG", "KISAH", "CATAT", "CETAK", "COPY", "KETIK", "PASTE", "CORET", "WARNAI", "TEMPEL", "RAKIT", "BONGKAR", "PASANG", "STEL", "UKUR", "TIMBANG", "HITUNG", "JUMLAH", "BAGI", "KALI", "KURANG", "TAMBAH", "SORTIR", "AMBON", "JAYAPURA", "SORONG", "MERAUKE", "LAMPUNG", "BENGKULU", "JAMBI", "PADANG", "ACEH", "RIAU", "BATAM", "BANGKA", "BELITUNG", "SHANGHAI", "SINGAPURA", "KUALALUMPUR", "AMSTERDAM", "RIYADH", "MEKKAH", "MADINAH", "ISTANBUL", "ANKARA", "WASHINGTON", "LOSANGELES", "CHICAGO", "TORONTO", "RIO", "BUENOSAIRES", "MUMBAI", "DELHI", "DHAKA", "KARACHI", "BAGHDAD", "TEHRAN", "ATENA", "LIMA", "JUSTIN", "BIEBER", "JUNGKOOK", "JIMIN", "V", "SUGA", "JHOPE", "JIN", "RM", "BLACKPINK", "LISA", "JENNIE", "JISOO", "ROSE", "CRISTIANO", "RONALDO", "LIONEL", "MESSI", "NEYMAR", "MBAPPE", "HAALAND", "SALAH", "ROONEY", "BECKHAM", "ZIDANE", "MARADONA", "PELE", "JORDAN", "LEBRON", "KOBE", "CURRY", "ELON", "MUSK", "MARK", "ZUCKERBERG", "BILL", "GATES", "STEVE", "JOBS", "ALBERT", "EINSTEIN", "NEWTON", "GALILEO", "TESLA", "EDISON", "ARISTOTELES", "PLATO", "SOCRATES", "SHAKESPEARE", "MOZART", "BEETHOVEN", "CHOPIN", "PICASSO", "VINCI", "COLUMBUS", "MANGKUBUMI", "THAMRIN", "ATTA", "HALILINTAR", "GIAS", "GIBRAN"
@@ -267,313 +264,247 @@
     if (KATA_MASTER.HARD.length === 0) KATA_MASTER.HARD = ["KEMERDEKAAN", "KOMPUTER", "TELEVISI"];
   </script>
 
-  <!-- ================= TOP NAVIGATION / HEADER ================= -->
-  <header class="bg-slate-950 text-white px-4 py-1.5 border-b border-emerald-950 shrink-0" id="mainHeader">
+  <header id="mainHeader" class="bg-white dark:bg-slate-950 text-slate-800 dark:text-white px-4 py-2 border-b border-slate-200 dark:border-emerald-950 shrink-0">
     <div class="max-w-4xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2">
-        <span class="text-xs uppercase font-black tracking-widest text-emerald-400 mono-font">CURI KATA v3.0</span>
+        <span class="text-xs uppercase font-black tracking-widest text-emerald-600 dark:text-emerald-400 mono-font">CURI KATA // COIN-OP v3.5</span>
       </div>
-      <button onclick="toggleLeaderboardModal()" class="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[10px] px-2.5 py-0.5 rounded font-black transition mono-font">
+      <button onclick="toggleLeaderboardModal()" class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] px-3 py-1 rounded-lg font-black transition mono-font">
         🏆 LEADERBOARD
       </button>
     </div>
   </header>
 
-  <!-- ================= MAIN CONTAINER ================= -->
-  <main class="flex-grow flex flex-col justify-center items-center p-2 overflow-hidden relative w-full max-w-4xl mx-auto">
+  <main class="flex-grow flex flex-col justify-center items-center p-3 overflow-hidden relative w-full max-w-4xl mx-auto">
     
-    <!-- ================= SCENE 1: MENU UTAMA ================= -->
-    <div id="menuScene" class="w-full max-w-md bg-slate-950 border-2 border-emerald-500 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] overflow-hidden flex flex-col justify-between max-h-full">
+    <div id="menuScene" class="w-full max-w-2xl bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl shadow-2xl overflow-hidden flex flex-col justify-between max-h-full transition-all duration-300 p-1">
       
-      <!-- Premium Arcady Logo Banner -->
-      <div class="p-5 text-center shrink-0 border-b border-emerald-900 bg-gradient-to-b from-slate-900 to-slate-950">
-        <h1 id="menuLogo" class="text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-400">Curi-Curi Kata</h1>
-        <p class="text-emerald-500/70 text-[9px] uppercase tracking-widest font-black mt-1.5 mono-font">Arcade Lexical Warfare</p>
+      <div class="p-4 text-center shrink-0 border-b-4 border-slate-800 dark:border-emerald-900 bg-slate-50 dark:bg-slate-900 flex flex-col items-center">
+        <img src="image_3e561e.jpg" alt="Logo Curi-Curi Kata" class="w-full max-w-[280px] h-auto object-contain drop-shadow-md rounded-xl" onerror="this.style.display='none'; document.getElementById('backupLogoText').style.display='block';">
+        <h1 id="backupLogoText" class="hidden text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-600 dark:text-emerald-400">Curi-Curi Kata</h1>
+        <p class="text-emerald-700 dark:text-emerald-500/80 text-[10px] uppercase tracking-widest font-black mt-2 mono-font">Arcade Lexical Tactical Warfare</p>
       </div>
 
-      <!-- Settings Form -->
-      <div class="p-4 space-y-4 overflow-y-auto no-scrollbar text-xs">
-        <!-- Input Nama -->
+      <div class="p-6 md:p-8 space-y-6 overflow-y-auto no-scrollbar text-sm">
         <div>
-          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Codename Pemain:</label>
-          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-3 py-1 rounded bg-slate-900 border border-emerald-800 focus:border-emerald-400 focus:outline-none font-bold text-emerald-300">
+          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-1.5 text-xs uppercase tracking-wider mono-font">Codename Agen Pemain:</label>
+          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-emerald-800 focus:border-emerald-500 dark:focus:border-emerald-400 focus:outline-none font-bold text-slate-800 dark:text-emerald-300">
         </div>
 
-        <!-- Custom Compact Toggle -->
-        <div class="bg-slate-900/60 p-2 rounded border border-emerald-950 flex items-center justify-between">
+        <div class="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl border-2 border-slate-300 dark:border-emerald-950 flex items-center justify-between shadow-sm">
           <div>
-            <label class="block text-slate-300 font-bold text-[11px]">Daftar Kata yang Dicari</label>
-            <span class="text-[9px] text-slate-500" id="hintVisibilityText">Aktif: Target kata ditampilkan jelas.</span>
+            <label class="block text-slate-950 dark:text-slate-200 font-black text-sm md:text-base tracking-tight">Tampilkan Daftar Kata Target</label>
+            <span class="text-xs text-slate-600 dark:text-slate-400 font-medium" id="hintVisibilityText">Aktif: Target kata ditampilkan jelas.</span>
           </div>
-          <label class="relative inline-flex items-center cursor-pointer select-none">
+          <label class="relative inline-flex items-center cursor-pointer select-none ml-4 shrink-0">
             <input type="checkbox" id="showWordToggle" checked class="sr-only peer" onchange="toggleOptionText()">
-            <div class="w-9 h-4.5 bg-slate-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-emerald-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-emerald-400 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-900/40 border border-emerald-900"></div>
+            <div class="w-14 h-7 bg-slate-400 dark:bg-slate-800 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-emerald-500 after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white dark:after:bg-emerald-400 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-200 dark:peer-checked:bg-emerald-950 border-2 border-slate-500 dark:border-emerald-800 shadow-inner"></div>
           </label>
         </div>
 
-        <!-- Pilihan Kesulitan (Difficulty) -->
         <div>
-          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Pilih Kesulitan:</label>
-          <div class="grid grid-cols-3 gap-2">
-            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-emerald-900/20 border-emerald-500 text-emerald-400">
-              <span class="text-[10px]">EASY</span>
-              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 8x8</span>
+          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Kesulitan Operasi:</label>
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400">
+              <span class="text-xs md:text-sm">EASY</span>
+              <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 8x8</span>
             </button>
-            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/50">
-              <span class="text-[10px]">MEDIUM</span>
-              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 12x12</span>
+            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50">
+              <span class="text-xs md:text-sm">MEDIUM</span>
+              <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 12x12</span>
             </button>
-            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/50">
-              <span class="text-[10px]">HARD</span>
-              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 15x15</span>
+            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50">
+              <span class="text-xs md:text-sm">HARD</span>
+              <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 15x15</span>
             </button>
           </div>
         </div>
 
-        <!-- Pilihan Mode Game -->
         <div>
-          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Pilih Mode Permainan:</label>
-          <div class="grid grid-cols-2 gap-2">
-            <!-- Casual -->
-            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-emerald-900/20 border-emerald-500">
-              <span class="text-xs">☕</span>
+          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Mode Pertempuran:</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-slate-700 dark:text-slate-200">
+              <span class="text-xl">☕</span>
               <div>
-                <div class="font-bold text-slate-200 text-[10px] leading-tight logo-font">CASUAL</div>
-                <div class="text-[8px] text-slate-500 leading-none mono-font">Tanpa batasan waktu.</div>
+                <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">CASUAL</div>
+                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Tanpa batasan waktu.</div>
               </div>
             </button>
 
-            <!-- Speedrun -->
-            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
-              <span class="text-xs">⚡</span>
+            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+              <span class="text-lg">⚡</span>
               <div>
-                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">SPEEDRUN</div>
-                <div class="text-[8px] text-slate-500 leading-none mono-font">Selesaikan cepat!</div>
+                <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">SPEEDRUN</div>
+                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Selesaikan secepat mungkin!</div>
               </div>
             </button>
 
-            <!-- Time Challenge -->
-            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
-              <span class="text-xs">⏱️</span>
+            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+              <span class="text-lg">⏱️</span>
               <div>
-                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">TIME LIMIT</div>
-                <div class="text-[8px] text-slate-500 leading-none mono-font">Pacu sisa waktu.</div>
+                <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">TIME LIMIT</div>
+                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Pacu sisa waktu.</div>
               </div>
             </button>
 
-            <!-- Turn Base Battle -->
-            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
-              <span class="text-xs">⚔️</span>
+            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+              <span class="text-lg">⚔️</span>
               <div>
-                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">RPG BATTLE</div>
-                <div class="text-[8px] text-slate-500 leading-none mono-font">Lawan Penjahat!</div>
+                <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">RPG BATTLE</div>
+                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Lawan Penjahat taktis!</div>
               </div>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Start Button -->
-      <div class="p-3 bg-slate-900/80 border-t border-emerald-950 shrink-0">
-        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 font-black py-2 rounded text-xs transition duration-150 shadow-md flex items-center justify-center space-x-1.5 active:scale-95 logo-font">
+      <div class="p-5 bg-slate-50 dark:bg-slate-900/80 border-t-2 border-slate-200 dark:border-emerald-950 shrink-0">
+        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 font-black py-3 rounded-xl text-sm transition duration-150 shadow-md flex items-center justify-center space-x-2 active:scale-95 logo-font">
           <span>MASUK ARENA</span>
           <span>🚀</span>
         </button>
       </div>
     </div>
 
-    <!-- ================= SCENE 2: GAMEPLAY (DYNAMIC STYLING) ================= -->
     <div id="gameplayScene" class="hidden w-full h-full flex flex-col gap-2 items-stretch justify-center overflow-hidden">
       
-      <!-- ============ THE DYNAMIC COMBAT / ARENA BACKPLATE (RUINED CITY WITH REALTIME LIGHTNING) ============ -->
-      <div id="battleArena" class="hidden w-full rounded-lg bg-apocalypse p-1 border border-red-950/60 overflow-hidden relative shrink-0 h-28">
+      <div id="battleArena" class="hidden w-full rounded-2xl bg-apocalypse p-1 border-2 border-red-950 overflow-hidden relative shrink-0 h-32 shadow-inner">
         
-        <!-- Lightning Strike Layer (Triggered dynamically by keyframes) -->
         <div class="absolute inset-0 lightning-layer pointer-events-none z-10"></div>
         <div id="damageOverlay" class="absolute inset-0 pointer-events-none z-30"></div>
 
-        <!-- Ruined City Skyline SVG (Much clearer & layered destruction) -->
-        <div class="absolute inset-x-0 bottom-0 h-14 opacity-40 pointer-events-none z-0">
-          <svg class="w-full h-full fill-red-950" viewBox="0 0 400 60" preserveAspectRatio="none">
-            <!-- Jagged ruins, crumbled skyscrapers, fractured industrial grids -->
+        <div class="absolute inset-x-0 bottom-0 h-16 opacity-50 pointer-events-none z-0">
+          <svg class="w-full h-full fill-red-950/80" viewBox="0 0 400 60" preserveAspectRatio="none">
             <path d="M0,60 L0,30 L10,30 L15,12 L20,12 L25,40 L35,22 L40,22 L45,45 L52,5 L62,5 L68,38 L75,25 L88,15 L92,30 L98,20 L105,42 L115,15 L125,15 L130,35 L140,8 L152,42 L165,22 L172,38 L185,5 L192,5 L202,30 L212,18 L225,40 L238,12 L248,32 L258,22 L268,45 L280,10 L288,10 L298,35 L310,15 L320,38 L332,8 L340,30 L352,20 L365,45 L378,15 L385,15 L400,32 L400,60 Z"/>
           </svg>
         </div>
 
-        <div class="grid grid-cols-2 gap-1 relative z-20 h-full items-center">
-          <!-- Hero Frame (Courageous Youth - Green Theme - Mario Style) -->
+        <div class="grid grid-cols-2 gap-1 relative z-20 h-full items-center px-4">
           <div class="flex flex-col items-center justify-center h-full">
-            <span class="text-[7px] retro-font text-emerald-400 mb-0.5">HERO</span>
+            <span class="text-[7px] retro-font text-emerald-400 mb-1">HERO</span>
             
-            <div id="heroSpriteContainer" class="sprite-idle relative w-12 h-16 flex items-center justify-center transition-all">
+            <div id="heroSpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all">
               <svg id="heroSprite" class="w-full h-full" viewBox="0 0 100 140">
-                <!-- Mario Bros Style Proportions: Big Cap, Determined Pose, Full Body -->
-                <!-- Boots -->
-                <rect x="32" y="118" width="16" height="12" fill="#5c3a21" rx="3" />
-                <rect x="52" y="118" width="16" height="12" fill="#5c3a21" rx="3" />
-                <!-- Legs -->
-                <rect x="36" y="98" width="11" height="22" fill="#1d4ed8" />
-                <rect x="53" y="98" width="11" height="22" fill="#1d4ed8" />
-                <!-- Torso (Green Outfit) -->
-                <rect x="28" y="58" width="44" height="42" fill="#10b981" rx="8" />
-                <!-- Overalls / Suspender lines -->
-                <rect x="34" y="58" width="8" height="42" fill="#1e3a8a" />
-                <rect x="58" y="58" width="8" height="42" fill="#1e3a8a" />
-                <!-- Golden Buttons -->
-                <circle cx="38" cy="78" r="3" fill="#f59e0b" />
-                <circle cx="62" cy="78" r="3" fill="#f59e0b" />
-                <!-- Left Hand & Shield -->
-                <circle cx="18" cy="80" r="7" fill="#fbcfe8" />
-                <path d="M 10 65 L 22 60 L 22 85 Q 22 95 10 90 Z" fill="#1e40af" stroke="#60a5fa" stroke-width="2" />
-                <!-- Neck -->
-                <rect x="44" y="52" width="12" height="8" fill="#fbcfe8" />
-                <!-- Head -->
-                <circle cx="50" cy="38" r="18" fill="#fbcfe8" />
-                <!-- Hair (Brown sideburns) -->
-                <path d="M 32 30 C 32 24 36 20 42 20 L 42 38 Z" fill="#4a2c11" />
-                <path d="M 68 30 C 68 24 64 20 58 20 L 58 38 Z" fill="#4a2c11" />
-                <!-- Determined Eyes -->
-                <rect x="42" y="34" width="4" height="6" fill="#111827" />
-                <rect x="54" y="34" width="4" height="6" fill="#111827" />
-                <!-- Hero Smile -->
-                <path d="M 46 48 Q 50 52 54 48" stroke="#111827" stroke-width="2" fill="none" />
-                <!-- Green Cap (Flatcap/Mario Visor style) -->
-                <ellipse cx="50" cy="22" r="22" fill="#10b981" />
-                <path d="M 32 22 L 68 22 Q 74 24 74 28 L 68 28 Z" fill="#047857" />
-                <!-- Shield/Logo on Cap -->
-                <circle cx="50" cy="18" r="4" fill="#ffffff" />
-                <path d="M 48 16 L 52 16 L 50 20 Z" fill="#10b981" />
-                <!-- Right Arm holding Pixelated/Steel Sword -->
-                <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 72px 90px;">
-                  <rect x="70" y="75" width="8" height="20" fill="#10b981" rx="2" />
-                  <!-- Hand holding sword -->
-                  <circle cx="74" cy="85" r="7" fill="#fbcfe8" />
-                  <!-- Sword Hilt -->
-                  <rect x="68" y="70" width="22" height="4" fill="#f59e0b" />
-                  <rect x="78" y="74" width="4" height="10" fill="#78350f" />
-                  <!-- Blade -->
-                  <path d="M 77 70 L 77 25 L 81 20 L 85 25 L 85 70 Z" fill="#cbd5e1" stroke="#475569" stroke-width="1.5" />
+                <rect x="30" y="118" width="18" height="12" fill="#3b2314" rx="2" />
+                <rect x="52" y="118" width="18" height="12" fill="#3b2314" rx="2" />
+                <rect x="34" y="94" width="12" height="26" fill="#1e3a8a" />
+                <rect x="54" y="94" width="12" height="26" fill="#1e3a8a" />
+                <rect x="28" y="90" width="44" height="6" fill="#78350f" rx="1" />
+                <rect x="46" y="88" width="8" height="10" fill="#f59e0b" rx="1" />
+                <rect x="26" y="54" width="48" height="38" fill="#047857" rx="6" />
+                <rect x="22" y="52" width="12" height="10" fill="#64748b" rx="2" />
+                <path d="M 22 36 L 10 40 L 18 46 Z" fill="#10b981" />
+                <rect x="44" y="48" width="12" height="8" fill="#fbcfe8" />
+                <circle cx="50" cy="36" r="16" fill="#fbcfe8" />
+                <path d="M 34 32 Q 34 22 46 22 L 46 36 Z" fill="#451a03" />
+                <path d="M 66 32 Q 66 22 54 22 L 54 36 Z" fill="#451a03" />
+                <rect x="40" y="32" width="5" height="5" fill="#000000" />
+                <rect x="55" y="32" width="5" height="5" fill="#000000" />
+                <path d="M 46 45 Q 50 49 54 45" stroke="#000000" stroke-width="2.5" fill="none" />
+                <rect x="34" y="24" width="32" height="6" fill="#10b981" />
+                <circle cx="50" cy="27" r="2.5" fill="#ffffff" />
+                <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 75px 86px;">
+                  <circle cx="75" cy="80" r="7.5" fill="#1f2937" />
+                  <rect x="71" y="66" width="8" height="14" fill="#64748b" />
+                  <rect x="63" y="62" width="24" height="5" fill="#f59e0b" rx="1" />
+                  <path d="M 70 62 L 70 12 L 75 4 L 80 12 L 80 62 Z" fill="#cbd5e1" stroke="#38bdf8" stroke-width="2" />
                 </g>
               </svg>
             </div>
             
-            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1 overflow-hidden border border-neutral-700 mt-0.5">
+            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1.5 overflow-hidden border border-neutral-700 mt-1">
               <div id="playerHpBar" class="bg-emerald-500 h-full w-full transition-all duration-200"></div>
             </div>
-            <div class="text-[7px] retro-font text-white mt-0.5" id="playerHpText">100 HP</div>
+            <div class="text-[7px] retro-font text-white mt-1" id="playerHpText">100 HP</div>
           </div>
 
-          <!-- Enemy Frame (Penjahat - Terrorist Style Outfit) -->
           <div class="flex flex-col items-center justify-center h-full">
-            <span class="text-[7px] retro-font text-red-500 mb-0.5">PENJAHAT</span>
+            <span class="text-[7px] retro-font text-red-500 mb-1">PENJAHAT</span>
             
-            <div id="enemySpriteContainer" class="sprite-idle relative w-12 h-16 flex items-center justify-center transition-all">
+            <div id="enemySpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all">
               <svg id="enemySprite" class="w-full h-full" viewBox="0 0 100 140">
-                <!-- Mario Bros Proportions Enemy: Rogue Terrorist Style -->
-                <!-- Combat Boots -->
-                <rect x="32" y="118" width="16" height="12" fill="#1e2937" rx="3" />
-                <rect x="52" y="118" width="16" height="12" fill="#1e2937" rx="3" />
-                <!-- Legs (Cargo Pants) -->
-                <rect x="36" y="98" width="11" height="22" fill="#7f1d1d" />
-                <rect x="53" y="98" width="11" height="22" fill="#7f1d1d" />
-                <rect x="34" y="104" width="4" height="8" fill="#450a0a" /> <!-- Pocket -->
-                <rect x="62" y="104" width="4" height="8" fill="#450a0a" /> <!-- Pocket -->
-                <!-- Torso (Tactical Utility Vest) -->
-                <rect x="28" y="58" width="44" height="42" fill="#374151" rx="8" />
-                <!-- Tactical Straps & Plates -->
-                <rect x="33" y="64" width="12" height="15" fill="#1f2937" rx="1" />
-                <rect x="55" y="64" width="12" height="15" fill="#1f2937" rx="1" />
-                <rect x="33" y="82" width="34" height="10" fill="#111827" rx="2" />
-                <!-- Neck -->
-                <rect x="44" y="52" width="12" height="8" fill="#111827" />
-                <!-- Head (Balaclava / Ski Mask) -->
-                <circle cx="50" cy="38" r="18" fill="#111827" />
-                <!-- Eye Hole Cutout -->
-                <rect x="38" y="32" width="24" height="8" fill="#fbcfe8" rx="2" />
-                <!-- Menacing Slanted Eyes -->
-                <polygon points="39,32 50,37 43,39" fill="#000000" />
-                <polygon points="61,32 50,37 57,39" fill="#000000" />
-                <circle cx="44" cy="36" r="1.5" fill="#ef4444" />
-                <circle cx="56" cy="36" r="1.5" fill="#ef4444" />
-                <!-- Balaclava Mouth Opening -->
-                <ellipse cx="50" cy="48" r="5" fill="#111827" />
-                <!-- Angry Frown inside cutout -->
-                <path d="M 47 48 Q 50 45 53 48" stroke="#ef4444" stroke-width="1.5" fill="none" />
-                <!-- Left Hand holding heavy Dynamite Pack -->
-                <circle cx="18" cy="80" r="7" fill="#111827" />
+                <rect x="30" y="118" width="18" height="12" fill="#0f172a" rx="2" />
+                <rect x="52" y="118" width="18" height="12" fill="#0f172a" rx="2" />
+                <rect x="34" y="94" width="12" height="26" fill="#4b5563" />
+                <rect x="54" y="94" width="12" height="26" fill="#4b5563" />
+                <rect x="36" y="100" width="6" height="6" fill="#1f2937" />
+                <rect x="56" y="106" width="6" height="6" fill="#111827" />
+                <rect x="28" y="90" width="44" height="6" fill="#374151" />
+                <rect x="26" y="54" width="48" height="38" fill="#1e293b" rx="6" />
+                <rect x="34" y="60" width="32" height="22" fill="#7f1d1d" rx="2" />
+                <rect x="38" y="64" width="6" height="12" fill="#f59e0b" />
+                <rect x="47" y="64" width="6" height="12" fill="#f59e0b" />
+                <rect x="56" y="64" width="6" height="12" fill="#f59e0b" />
+                <rect x="44" y="48" width="12" height="8" fill="#0f172a" />
+                <circle cx="50" cy="36" r="16" fill="#0f172a" />
+                <rect x="36" y="28" width="28" height="8" fill="#dc2626" rx="2" />
+                <circle cx="43" cy="32" r="3.5" fill="#facc15" />
+                <circle cx="57" cy="32" r="3.5" fill="#facc15" />
+                <circle cx="20" cy="80" r="7.5" fill="#111827" />
                 <rect x="8" y="70" width="8" height="18" fill="#b91c1c" rx="1" />
-                <line x1="12" y1="70" x2="12" y2="64" stroke="#f59e0b" stroke-width="1.5" />
-                <!-- Right Hand holding Red Metal Crowbar -->
-                <circle cx="82" cy="80" r="7" fill="#111827" />
-                <path d="M 80 90 L 85 50 Q 88 40 95 44 L 92 52" stroke="#dc2626" stroke-width="4.5" stroke-linecap="round" fill="none" />
+                <line x1="12" y1="70" x2="12" y2="64" stroke="#f59e0b" stroke-width="2" />
+                <g id="enemyWeaponG">
+                  <circle cx="80" cy="80" r="7.5" fill="#111827" />
+                  <path d="M 78 92 L 84 46 Q 87 35 96 39 L 91 48" stroke="#dc2626" stroke-width="5" stroke-linecap="round" fill="none" />
+                </g>
               </svg>
             </div>
             
-            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1 overflow-hidden border border-neutral-700 mt-0.5">
+            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1.5 overflow-hidden border border-neutral-700 mt-1">
               <div id="enemyHpBar" class="bg-red-600 h-full w-full transition-all duration-200"></div>
             </div>
-            <div class="text-[7px] retro-font text-white mt-0.5" id="enemyHpText">100 HP</div>
+            <div class="text-[7px] retro-font text-white mt-1" id="enemyHpText">100 HP</div>
           </div>
         </div>
 
-        <!-- Floating Arena Log overlay -->
         <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded border border-red-900/30 z-30">
-          <p id="combatLog" class="text-[7px] text-amber-400 retro-font leading-none">PENJAHAT SIAP MENYERANG!</p>
+          <p id="combatLog" class="text-[7px] text-amber-400 retro-font leading-none uppercase">PENJAHAT SIAP MENYERANG!</p>
         </div>
       </div>
 
-      <!-- ============ REDESIGNED MINIMALIST HUD PANEL (Extreme Space-Saver) ============ -->
-      <div class="bg-slate-950 border border-emerald-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0" id="scorePanel">
+      <div class="bg-white dark:bg-slate-950 border-2 border-slate-800 dark:border-emerald-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0" id="scorePanel">
         
-        <!-- Left: Quick Identity Pill -->
-        <div class="flex items-center space-x-2 shrink-0 justify-between md:justify-start">
+        <div class="flex items-center space-x-3 shrink-0 justify-between md:justify-start">
           <div class="leading-none">
-            <span class="text-[7px] text-slate-500 uppercase font-black tracking-widest mono-font block">PLAYER AGENT</span>
-            <span class="text-[10px] font-black text-emerald-300 uppercase tracking-tight" id="gamePlayerName">Pemain</span>
+            <span class="text-[8px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest block mono-font">CODENAME AGENT</span>
+            <span class="text-xs font-black text-emerald-600 dark:text-emerald-300 uppercase tracking-tight" id="gamePlayerName">Pemain</span>
           </div>
-          <span class="bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font" id="badgeDifficulty">
+          <span class="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font" id="badgeDifficulty">
             EASY
           </span>
         </div>
 
-        <!-- Center: Stats Dashboard (Super Minimalist Pill) -->
-        <div class="grid grid-cols-2 gap-1.5 text-xs shrink-0 bg-slate-900/60 p-1.5 rounded border border-emerald-950">
+        <div class="grid grid-cols-2 gap-2 text-xs shrink-0 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200 dark:border-emerald-950">
           <div class="flex items-center space-x-1.5">
-            <span class="text-[8px] text-slate-500 font-bold uppercase mono-font">SCORE:</span>
-            <span class="text-[11px] font-black text-emerald-400 mono-font" id="currentScore">0</span>
+            <span class="text-[9px] text-slate-500 font-bold uppercase mono-font">SCORE:</span>
+            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 mono-font" id="currentScore">0</span>
           </div>
-          <div class="flex items-center space-x-1.5 border-l border-emerald-950 pl-1.5">
-            <span class="text-[8px] text-slate-500 font-bold uppercase id-label mono-font" id="timerLabel">TIME:</span>
-            <span class="text-[11px] font-black text-slate-200 mono-font" id="gameTimer">00:00</span>
-          </div>
-        </div>
-
-        <!-- Right: Horizontal Target Word Strip -->
-        <div class="flex-grow min-w-0 flex items-center gap-1.5">
-          <div class="text-[7px] text-slate-500 uppercase tracking-widest font-black mono-font leading-none shrink-0 hidden lg:block">TARGET:</div>
-          <div id="targetWordList" class="flex-grow flex flex-row overflow-x-auto whitespace-nowrap gap-1 px-1.5 py-1 no-scrollbar select-none bg-slate-900/40 rounded border border-emerald-950/40">
-            <!-- Diisi Dinamis oleh JS -->
+          <div class="flex items-center space-x-1.5 border-l border-slate-300 dark:border-emerald-950 pl-2">
+            <span class="text-[9px] text-slate-500 font-bold uppercase id-label mono-font" id="timerLabel">TIME:</span>
+            <span class="text-xs font-black text-slate-800 dark:text-slate-200 mono-font" id="gameTimer">00:00</span>
           </div>
         </div>
 
-        <!-- Extreme Right: Tiny Control pills -->
-        <div class="flex space-x-1 shrink-0 justify-end mt-1 md:mt-0">
-          <button onclick="surrenderGame()" class="py-0.5 px-1.5 rounded bg-red-950/30 border border-red-900/30 hover:bg-red-900/30 text-red-500 font-black text-[8px] uppercase tracking-wide mono-font transition">
-            🏳️ OUT
+        <div class="flex-grow min-w-0 flex items-center gap-2">
+          <div class="text-[8px] text-slate-500 uppercase tracking-widest font-black leading-none shrink-0 hidden lg:block mono-font">WORDS:</div>
+          <div id="targetWordList" class="flex-grow flex flex-row overflow-x-auto whitespace-nowrap gap-1.5 px-2 py-1.5 no-scrollbar select-none bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-emerald-950/40">
+            </div>
+        </div>
+
+        <div class="flex space-x-1.5 shrink-0 justify-end mt-1 md:mt-0">
+          <button onclick="surrenderGame()" class="py-1 px-2.5 rounded-lg bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/30 text-red-600 dark:text-red-500 font-black text-[9px] uppercase tracking-wide mono-font transition">
+            🏳️ QUIT
           </button>
-          <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-0.5 px-1.5 rounded bg-emerald-950/40 border border-emerald-800/30 hover:bg-emerald-900/30 text-emerald-400 font-black text-[8px] uppercase tracking-wide mono-font transition">
+          <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-1 px-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-black text-[9px] uppercase tracking-wide mono-font transition">
             🔄 RESET
           </button>
         </div>
       </div>
 
-      <!-- ================= WORD SEARCH BOARD FRAME (Optimized Space) ================= -->
-      <div class="flex-grow flex flex-col justify-center items-center w-full overflow-hidden p-1">
-        <div class="bg-slate-950 rounded-lg p-2 border border-emerald-950/60 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center" id="gridBoardContainer">
-          <!-- Grid Wrapper (Massively larger with optimized padding) -->
-          <div id="wordGrid" class="grid w-full h-full gap-[2px] p-1 bg-slate-900 rounded cursor-pointer select-none">
-            <!-- Diisi Dinamis oleh JS -->
-          </div>
+      <div class="flex-grow flex flex-col justify-center items-center w-full overflow-hidden p-1.5">
+        <div class="bg-white dark:bg-slate-950 rounded-3xl p-3 border-4 border-slate-800 dark:border-emerald-950 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center shadow-2xl transition-all duration-300" id="gridBoardContainer">
+          <div id="wordGrid" class="grid w-full h-full gap-[2.5px] p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl cursor-pointer select-none">
+            </div>
         </div>
       </div>
 
@@ -581,56 +512,54 @@
 
   </main>
 
-  <!-- ================= MODAL: LEADERBOARD ================= -->
   <div id="leaderboardModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-950 border-2 border-emerald-500 rounded-xl max-w-xs w-full p-4 shadow-2xl text-xs">
-      <div class="flex justify-between items-center border-b border-emerald-900 pb-2 mb-2">
-        <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center logo-font">
-          🏆 TOP AGENTS
+    <div class="bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl max-w-sm w-full p-5 shadow-2xl text-xs">
+      <div class="flex justify-between items-center border-b-2 border-slate-200 dark:border-emerald-900 pb-3 mb-3">
+        <h3 class="text-xs font-black text-slate-800 dark:text-emerald-400 uppercase tracking-widest flex items-center logo-font">
+          🏆 TOP COIN-OP AGENTS
         </h3>
-        <button onclick="toggleLeaderboardModal()" class="text-emerald-500 hover:text-emerald-300 text-lg font-bold">&times;</button>
+        <button onclick="toggleLeaderboardModal()" class="text-slate-500 dark:text-emerald-500 hover:text-emerald-300 text-lg font-bold">&times;</button>
       </div>
       
-      <div class="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar" id="leaderboardContent">
-        <div class="text-center text-slate-500 py-3 mono-font">CONNECTING SECURE NETWORK...</div>
+      <div class="space-y-2 max-h-[220px] overflow-y-auto no-scrollbar animate-pulse" id="leaderboardContent">
+        <div class="text-center text-slate-500 py-4 mono-font">CONNECTING SECURE NETWORK...</div>
       </div>
 
-      <div class="mt-4 pt-2 border-t border-emerald-900">
-        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 py-1.5 rounded font-black transition logo-font text-[10px]">
+      <div class="mt-4 pt-3 border-t-2 border-slate-200 dark:border-emerald-900">
+        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 py-2.5 rounded-xl font-black transition logo-font text-[10px]">
           CLOSE REPORT
         </button>
       </div>
     </div>
   </div>
 
-  <!-- ================= MODAL: GAME OVER / VICTORY ================= -->
   <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-950 border-2 border-emerald-500 rounded-xl max-w-xs w-full p-5 shadow-2xl text-center text-xs">
-      <div id="resultEmoji" class="text-3xl mb-1">🎉</div>
-      <h3 id="resultTitle" class="text-base font-black text-emerald-400 uppercase mb-1 logo-font">GAME END</h3>
-      <p id="resultText" class="text-slate-400 mb-3 text-[10px]">Detail operasi kata rahasia selesai.</p>
+    <div class="bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl max-w-xs w-full p-6 shadow-2xl text-center text-xs">
+      <div id="resultEmoji" class="text-4xl mb-2">🎉</div>
+      <h3 id="resultTitle" class="text-lg font-black text-slate-800 dark:text-emerald-400 uppercase mb-2 logo-font">GAME END</h3>
+      <p id="resultText" class="text-slate-500 dark:text-slate-400 mb-4 text-[11px]">Detail operasi kata rahasia selesai.</p>
 
-      <div class="bg-slate-900 rounded p-2.5 mb-4 border border-emerald-950">
+      <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3.5 mb-5 border-2 border-slate-200 dark:border-emerald-950">
         <div class="grid grid-cols-2 gap-2">
           <div>
             <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL POINTS</span>
-            <span id="resultScore" class="text-base font-black text-emerald-400 mono-font">0</span>
+            <span id="resultScore" class="text-lg font-black text-emerald-600 dark:text-emerald-400 mono-font">0</span>
           </div>
           <div>
             <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL DURATION</span>
-            <span id="resultTime" class="text-base font-black text-slate-200 mono-font">00:00</span>
+            <span id="resultTime" class="text-lg font-black text-slate-800 dark:text-slate-200 mono-font">00:00</span>
           </div>
         </div>
       </div>
 
-      <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 py-1.5 rounded font-black transition logo-font text-[10px]">
+      <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 py-2.5 rounded-xl font-black transition logo-font text-[10px]">
         MAIN MENU
       </button>
     </div>
   </div>
 
-  <!-- ================= GAME ENGINE & LOGIC SCRIPT ================= -->
   <script>
+    // State Game Utama
     let GAME_STATE = {
       playerName: "Pemain Baru",
       difficulty: "EASY", 
@@ -654,6 +583,52 @@
       selectedCells: []
     };
 
+    // Global Theme State: defaults to dark mode
+    let isDarkMode = true;
+
+    function initTheme() {
+      const stored = localStorage.getItem('themePreference');
+      if (stored === 'light') {
+        isDarkMode = false;
+      } else {
+        isDarkMode = true;
+      }
+      applyThemeStyles();
+    }
+
+    function toggleTheme() {
+      isDarkMode = !isDarkMode;
+      localStorage.setItem('themePreference', isDarkMode ? 'dark' : 'light');
+      applyThemeStyles();
+      AudioGame.playSelect();
+    }
+
+    function applyThemeStyles() {
+      const htmlEl = document.documentElement;
+      const sunIcon = document.getElementById('themeSunIcon');
+      const moonIcon = document.getElementById('themeMoonIcon');
+
+      if (isDarkMode) {
+        htmlEl.classList.add('dark');
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+      } else {
+        htmlEl.classList.remove('dark');
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+      }
+
+      // Re-apply styles if currently in gameplay scene to instantly update look
+      if (!document.getElementById('gameplayScene').classList.contains('hidden')) {
+        setupAesthetics();
+        renderGridHTML();
+        renderTargetWordsHTML();
+      }
+    }
+
+    // Call theme initializer immediately
+    initTheme();
+
     function toggleOptionText() {
       const toggle = document.getElementById('showWordToggle');
       const text = document.getElementById('hintVisibilityText');
@@ -668,12 +643,10 @@
     function selectDifficulty(diff) {
       GAME_STATE.difficulty = diff;
       document.querySelectorAll('.difficulty-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
-        btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-400');
+        btn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50";
       });
       const selectedBtn = document.getElementById(`btnDiff${diff}`);
-      selectedBtn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-400');
-      selectedBtn.classList.add('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
+      selectedBtn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400";
       AudioGame.playSelect();
     }
 
@@ -682,18 +655,16 @@
       
       const logo = document.getElementById('menuLogo');
       if (mode === 'TURN_BASE') {
-        logo.className = "text-3xl md:text-4xl font-black uppercase tracking-wider game-logo-red text-red-600 animate-pulse";
+        logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo-red text-red-600 animate-pulse";
       } else {
-        logo.className = "text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-400";
+        logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo text-emerald-600 dark:text-emerald-400";
       }
 
       document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
-        btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-400');
+        btn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200";
       });
       const selectedBtn = document.getElementById(`btnMode${mode}`);
-      selectedBtn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-400');
-      selectedBtn.classList.add('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
+      selectedBtn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-slate-700 dark:text-slate-200";
       AudioGame.playSelect();
     }
 
@@ -737,13 +708,14 @@
       const arena = document.getElementById('battleArena');
 
       if (GAME_STATE.mode === 'TURN_BASE') {
-        document.body.className = "bg-neutral-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
-        header.className = "bg-slate-950 text-red-500 px-4 py-1.5 border-b border-red-950 shrink-0";
-        scorePanel.className = "bg-neutral-950 border border-red-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0 text-slate-100";
-        container.className = "bg-neutral-950 rounded-lg p-2 border border-red-950 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center";
+        // Apocalyptic battle style for TURN_BASE RPG
+        document.body.className = "bg-neutral-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+        header.className = "bg-slate-950 text-red-500 px-4 py-2 border-b border-red-950 shrink-0";
+        scorePanel.className = "bg-neutral-950 border-2 border-red-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
+        container.className = "bg-neutral-950 rounded-3xl p-3 border-4 border-red-950 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
         
-        document.getElementById('gamePlayerName').className = "text-[10px] font-black text-red-500 uppercase tracking-tight";
-        document.getElementById('badgeDifficulty').className = "bg-red-950 border border-red-900/40 text-red-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font";
+        document.getElementById('gamePlayerName').className = "text-xs font-black text-red-500 uppercase tracking-tight";
+        document.getElementById('badgeDifficulty').className = "bg-red-950 border border-red-900/40 text-red-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
         
         arena.classList.remove('hidden');
 
@@ -754,13 +726,24 @@
         
         startCombatEngine();
       } else {
-        document.body.className = "bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
-        header.className = "bg-slate-950 text-emerald-400 px-4 py-1.5 border-b border-emerald-950 shrink-0";
-        scorePanel.className = "bg-slate-950 border border-emerald-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0 text-slate-100";
-        container.className = "bg-slate-950 rounded-lg p-2 border border-emerald-950/60 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center";
+        // Normal game aesthetics depend on light/dark mode state
+        if (isDarkMode) {
+          document.body.className = "bg-slate-900 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+          header.className = "bg-slate-950 text-emerald-400 px-4 py-2 border-b border-emerald-950 shrink-0";
+          scorePanel.className = "bg-slate-950 border-2 border-emerald-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
+          container.className = "bg-slate-950 rounded-3xl p-3 border-4 border-emerald-950/60 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
 
-        document.getElementById('gamePlayerName').className = "text-[10px] font-black text-emerald-300 uppercase tracking-tight";
-        document.getElementById('badgeDifficulty').className = "bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font";
+          document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-300 uppercase tracking-tight";
+          document.getElementById('badgeDifficulty').className = "bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
+        } else {
+          document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+          header.className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
+          scorePanel.className = "bg-white border-2 border-slate-300 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-800";
+          container.className = "bg-white rounded-3xl p-3 border-4 border-slate-800 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center shadow-lg";
+
+          document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-600 uppercase tracking-tight";
+          document.getElementById('badgeDifficulty').className = "bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
+        }
 
         arena.classList.add('hidden');
         stopCombatEngine();
@@ -846,9 +829,15 @@
       const size = GAME_STATE.gridSize;
       gridElement.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
-      const cellBgClass = GAME_STATE.mode === 'TURN_BASE' 
-        ? "bg-neutral-900 text-slate-250 hover:bg-red-950 border-neutral-800/80" 
-        : "bg-slate-900 text-slate-250 hover:bg-emerald-950 border-slate-800/80";
+      // Absolute Contrast styling setup to fix invisible characters bug completely!
+      let cellBgClass = "";
+      if (GAME_STATE.mode === 'TURN_BASE') {
+        cellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
+      } else {
+        cellBgClass = isDarkMode 
+          ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
+          : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950"; // Pure light contrast lock
+      }
 
       let fontSizeClass = "text-sm sm:text-base";
       if (size === 12) fontSizeClass = "text-[12px] sm:text-sm";
@@ -894,14 +883,18 @@
             if (GAME_STATE.mode === 'TURN_BASE') {
               badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-neutral-900 text-red-400 border border-red-950/60 transition-all shrink-0 mono-font";
             } else {
-              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-emerald-400 border border-emerald-950 transition-all shrink-0 mono-font";
+              badge.className = isDarkMode
+                ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-emerald-400 border border-emerald-950 transition-all shrink-0 mono-font"
+                : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-emerald-600 border border-emerald-200 transition-all shrink-0 mono-font";
             }
             badge.innerText = word;
           } else {
             if (GAME_STATE.mode === 'TURN_BASE') {
               badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-red-950/20 text-red-500 border border-red-900/40 select-none animate-pulse shrink-0 mono-font";
             } else {
-              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-slate-500 border border-slate-800 select-none shrink-0 mono-font";
+              badge.className = isDarkMode
+                ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-slate-500 border border-slate-800 select-none shrink-0 mono-font"
+                : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-400 border border-slate-200 select-none shrink-0 mono-font";
             }
             badge.innerText = `🔒 (L:${word.length})`;
           }
@@ -984,10 +977,16 @@
       e.preventDefault();
       const touch = e.touches[0];
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (element && element.dataset.row) {
-        const r = parseInt(element.dataset.row);
-        const c = parseInt(element.dataset.col);
-        startSelection(r, c);
+      if (element) {
+        let cell = element;
+        while (cell && !cell.dataset.row && cell.id !== 'wordGrid') {
+          cell = cell.parentElement;
+        }
+        if (cell && cell.dataset.row) {
+          const r = parseInt(cell.dataset.row);
+          const c = parseInt(cell.dataset.col);
+          startSelection(r, c);
+        }
       }
     }
 
@@ -996,23 +995,29 @@
       if (!GAME_STATE.isSelecting) return;
       const touch = e.touches[0];
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (element && element.dataset.row) {
-        const r = parseInt(element.dataset.row);
-        const c = parseInt(element.dataset.col);
-        continueSelection(r, c);
+      if (element) {
+        let cell = element;
+        while (cell && !cell.dataset.row && cell.id !== 'wordGrid') {
+          cell = cell.parentElement;
+        }
+        if (cell && cell.dataset.row) {
+          const r = parseInt(cell.dataset.row);
+          const c = parseInt(cell.dataset.col);
+          continueSelection(r, c);
+        }
       }
     }
 
-    // Highlighting paths
+    // MEMPERBAIKI BUG UTAMA: Menghilangkan kelas 'found-cell' dari sorotan sementara agar fungsi pembersih bekerja!
     function highlightSelection() {
       clearTemporaryHighlight();
       GAME_STATE.selectedCells.forEach(cell => {
         const el = getCellElement(cell.r, cell.c);
         if (el) {
           if (GAME_STATE.mode === 'TURN_BASE') {
-            el.classList.add('bg-red-800', 'text-white', 'scale-105');
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-red-700 border-red-500 scale-105 mono-font`;
           } else {
-            el.classList.add('bg-emerald-600', 'text-white', 'scale-105');
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-emerald-600 border-emerald-400 scale-105 mono-font`;
           }
         }
       });
@@ -1020,13 +1025,21 @@
 
     function clearTemporaryHighlight() {
       const size = GAME_STATE.gridSize;
+      
+      let baseCellBgClass = "";
+      if (GAME_STATE.mode === 'TURN_BASE') {
+        baseCellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
+      } else {
+        baseCellBgClass = isDarkMode 
+          ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
+          : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
+      }
+
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
           const el = getCellElement(r, c);
           if (el && !el.classList.contains('found-cell')) {
-            el.classList.remove(
-              'bg-emerald-600', 'bg-red-800', 'text-white', 'scale-105'
-            );
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer ${baseCellBgClass} mono-font`;
           }
         }
       }
@@ -1038,9 +1051,9 @@
         if (el) {
           el.classList.add('found-cell');
           if (GAME_STATE.mode === 'TURN_BASE') {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-650 text-white border-red-550 found-cell mono-font`;
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-600 text-white border-red-400 found-cell mono-font`;
           } else {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-650 text-white border-emerald-550 found-cell mono-font`;
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-600 text-white border-emerald-400 found-cell mono-font`;
           }
         }
       });
@@ -1088,7 +1101,7 @@
 
           if (GAME_STATE.timer <= 0) {
             clearInterval(GAME_STATE.timerInterval);
-            endGame(false, "Sisa waktu habis! Penjahat melarikan diri.");
+            endGame(false, "Sisa waktu habis! Penjahat berhasil lolos dari radar.");
           }
         }, 1000);
       }
@@ -1119,7 +1132,7 @@
           triggerEnemyAttack();
           GAME_STATE.combatTimer = monsterCooldown;
         } else {
-          document.getElementById('combatLog').innerText = `💥 PENJAHAT READY IN ${GAME_STATE.combatTimer}S`;
+          document.getElementById('combatLog').innerText = `💥 PENJAHAT MENYERANG DALAM ${GAME_STATE.combatTimer}S`;
         }
       }, 1000);
     }
@@ -1140,26 +1153,26 @@
         heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
         arena.classList.add('shake-anim');
         createDamageFloatEffect(heroSpriteContainer, "-10 HP", "text-red-500");
-      }, 250);
+      }, 200);
 
       setTimeout(() => {
         enemySpriteContainer.classList.remove('enemy-attack-anim');
         enemySpriteContainer.classList.add('sprite-idle');
         heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
         arena.classList.remove('shake-anim');
-      }, 600);
+      }, 550);
 
       document.getElementById('combatLog').innerText = "💥 PENJAHAT MEMUKUL: -10 HP";
 
       if (GAME_STATE.playerHp <= 0) {
         stopCombatEngine();
-        endGame(false, "Penjahat berhasil menjatuhkan Anda!");
+        endGame(false, "Penjahat melumpuhkan pertahanan Anda!");
       }
     }
 
     function triggerPlayerAttack() {
       AudioGame.playHit();
-      GAME_STATE.enemyHp = Math.max(0, GAME_STATE.enemyHp - 5);
+      GAME_STATE.enemyHp = Math.max(0, GAME_STATE.enemyHp - 10);
       updateHpBars();
 
       const heroSpriteContainer = document.getElementById('heroSpriteContainer');
@@ -1172,22 +1185,22 @@
 
       setTimeout(() => {
         enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
-        createDamageFloatEffect(enemySpriteContainer, "-5 HP", "text-emerald-400");
-      }, 250);
+        createDamageFloatEffect(enemySpriteContainer, "-10 HP", "text-emerald-400");
+      }, 200);
 
       setTimeout(() => {
         heroSpriteContainer.classList.remove('hero-attack-anim');
         heroSpriteContainer.classList.add('sprite-idle');
         sword.style.transform = "rotate(0deg)";
         enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
-      }, 600);
+      }, 550);
 
-      document.getElementById('combatLog').innerText = "⚔️ HERO STRIKE: -5 HP";
+      document.getElementById('combatLog').innerText = "⚔️ HERO STRIKE: -10 HP";
 
       if (GAME_STATE.enemyHp <= 0) {
         stopCombatEngine();
         AudioGame.playVictory();
-        endGame(true, "Luar biasa! Penjahat berhasil dilumpuhkan!");
+        endGame(true, "Misi Selesai! Penjahat berhasil ditangkap.");
       }
     }
 
@@ -1205,14 +1218,14 @@
       const parentRect = container.getBoundingClientRect();
 
       const el = document.createElement('div');
-      el.className = `absolute font-black text-[10px] retro-font ${colorClass} damage-text z-50`;
+      el.className = `absolute font-black text-xs retro-font ${colorClass} damage-text z-50`;
       el.innerText = text;
 
       el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 10}px`;
-      el.style.top = `${rect.top - parentRect.top}px`;
+      el.style.top = `${rect.top - parentRect.top - 15}px`;
 
       container.appendChild(el);
-      setTimeout(() => el.remove(), 800);
+      setTimeout(() => el.remove(), 850);
     }
 
     function stopCombatEngine() {
@@ -1288,6 +1301,7 @@
       endGame(false, "Meninggalkan area operasi.");
     }
 
+    // Reset dan kembali ke menu utama
     function restartToMenu() {
       document.getElementById('resultModal').classList.add('hidden');
       document.getElementById('gameplayScene').classList.add('hidden');
@@ -1296,8 +1310,13 @@
     }
 
     function setupAestheticsNormalMenu() {
-      document.body.className = "bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
-      document.getElementById('mainHeader').className = "bg-slate-950 text-emerald-400 px-4 py-1.5 border-b border-emerald-950 shrink-0";
+      if (isDarkMode) {
+        document.body.className = "bg-slate-900 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+        document.getElementById('mainHeader').className = "bg-slate-950 text-emerald-400 px-4 py-2 border-b border-emerald-950 shrink-0";
+      } else {
+        document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+        document.getElementById('mainHeader').className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
+      }
     }
 
     function saveLocalScore(name, score, mode, diff) {
@@ -1342,17 +1361,17 @@
       scores.forEach((entry, idx) => {
         const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}.`));
         const row = document.createElement('div');
-        row.className = "flex justify-between items-center bg-slate-900/60 p-2 rounded border border-emerald-950 hover:bg-slate-900 transition";
+        row.className = "flex justify-between items-center bg-slate-100 dark:bg-slate-900/60 p-2 rounded border border-slate-200 dark:border-emerald-950 hover:bg-slate-200 dark:hover:bg-slate-900 transition";
         row.innerHTML = `
           <div class="flex items-center space-x-2">
             <span class="font-black text-[11px] text-emerald-500">${medal}</span>
             <div>
-              <div class="font-black text-slate-200 text-[10px] mono-font">${entry.nama}</div>
+              <div class="font-black text-slate-800 dark:text-slate-200 text-[10px] mono-font">${entry.nama}</div>
               <div class="text-[7px] text-slate-500 uppercase tracking-widest mono-font">${entry.mode} • ${entry.difficulty}</div>
             </div>
           </div>
           <div class="text-right">
-            <div class="font-black text-emerald-400 text-[11px] mono-font">${entry.score} PTS</div>
+            <div class="font-black text-emerald-600 dark:text-emerald-400 text-[11px] mono-font">${entry.score} PTS</div>
             <div class="text-[7px] text-slate-500 mono-font">${entry.tanggal}</div>
           </div>
         `;
