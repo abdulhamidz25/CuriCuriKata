@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full overflow-hidden">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,17 +7,40 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      touch-action: manipulation;
+      touch-action: none;
       -webkit-tap-highlight-color: transparent;
     }
     .retro-font {
       font-family: 'Press Start 2P', cursive;
     }
-    /* Mencegah layar HP bergeser/scrolling saat jari menyeret huruf di papan */
+    .mono-font {
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .logo-font {
+      font-family: 'Bungee', cursive;
+    }
+
+    /* 3D Game Logo Style */
+    .game-logo {
+      font-family: 'Bungee', cursive;
+      text-shadow: 
+        3px 3px 0px #047857, 
+        5px 5px 0px #064e3b, 
+        7px 7px 15px rgba(0,0,0,0.5);
+    }
+    .game-logo-red {
+      font-family: 'Bungee', cursive;
+      text-shadow: 
+        3px 3px 0px #b91c1c, 
+        5px 5px 0px #7f1d1d, 
+        7px 7px 15px rgba(0,0,0,0.7);
+    }
+
+    /* Papan Grid No-Scroll & Swipe Locking */
     #wordGrid {
       touch-action: none; 
       user-select: none;
@@ -26,45 +49,53 @@
     .grid-cell {
       user-select: none;
       -webkit-user-select: none;
-      transition: all 0.15s ease;
+      transition: all 0.1s ease;
     }
     
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
     /* 2D ANIMATIONS & EFFECTS */
     @keyframes idleBob {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-4px); }
     }
     .sprite-idle {
-      animation: idleBob 2s infinite ease-in-out;
+      animation: idleBob 1.5s infinite ease-in-out;
     }
 
     @keyframes heroStrike {
       0% { transform: translateX(0) scale(1); }
-      25% { transform: translateX(-10px) scale(0.95); }
-      50% { transform: translateX(65px) rotate(12deg) scale(1.05); }
+      15% { transform: translateX(-12px) scale(0.95); }
+      45% { transform: translateX(65px) rotate(12deg) scale(1.15); }
       100% { transform: translateX(0) scale(1); }
     }
     .hero-attack-anim {
-      animation: heroStrike 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+      animation: heroStrike 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     @keyframes enemyStrike {
       0% { transform: translateX(0) scale(1); }
-      25% { transform: translateX(10px) scale(0.95); }
-      50% { transform: translateX(-65px) rotate(-12deg) scale(1.05); }
+      15% { transform: translateX(12px) scale(0.95); }
+      45% { transform: translateX(-65px) rotate(-12deg) scale(1.15); }
       100% { transform: translateX(0) scale(1); }
     }
     .enemy-attack-anim {
-      animation: enemyStrike 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+      animation: enemyStrike 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     @keyframes shake {
       0%, 100% { transform: translate(0, 0); }
-      10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 3px); }
-      20%, 40%, 60%, 80% { transform: translate(5px, -3px); }
+      10%, 30%, 50%, 70%, 90% { transform: translate(-4px, 2px); }
+      20%, 40%, 60%, 80% { transform: translate(4px, -2px); }
     }
     .shake-anim {
-      animation: shake 0.4s ease-in-out;
+      animation: shake 0.35s ease-in-out;
     }
 
     /* Red flash when taking damage */
@@ -73,35 +104,36 @@
       50% { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.95)) brightness(1.4); }
     }
     .hit-flash {
-      animation: redFlash 0.4s ease-in-out;
+      animation: redFlash 0.35s ease-in-out;
     }
 
     /* Float damage text */
     @keyframes floatUp {
       0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-60px) scale(0.7); opacity: 0; }
+      100% { transform: translateY(-50px) scale(0.75); opacity: 0; }
     }
     .damage-text {
-      animation: floatUp 1s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
+      animation: floatUp 0.85s forwards cubic-bezier(0.1, 0.8, 0.3, 1);
     }
 
-    /* Apocalypse background pattern */
+    /* Lightning Flash Effect - Cycles every 3.5 seconds */
+    @keyframes lightningFlash {
+      0%, 88%, 92%, 96%, 100% { opacity: 0; background-color: rgba(255, 255, 255, 0); }
+      89%, 91%, 93%, 95% { opacity: 0.55; background-color: rgba(235, 245, 255, 0.95); filter: brightness(1.5); }
+    }
+    .lightning-layer {
+      animation: lightningFlash 3.5s infinite;
+    }
+
+    /* Ruined City Backdrop Colors */
     .bg-apocalypse {
-      background: linear-gradient(135deg, #150202 0%, #290505 50%, #080000 100%);
+      background: linear-gradient(180deg, #070000 0%, #150202 50%, #030000 100%);
       position: relative;
       overflow: hidden;
     }
-    .bg-apocalypse::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image: radial-gradient(circle, rgba(239, 68, 68, 0.12) 1px, transparent 1px);
-      background-size: 16px 16px;
-      pointer-events: none;
-    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500">
+<body class="bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500">
 
   <!-- ================= SOUND MANAGER (Web Audio API) ================= -->
   <script>
@@ -119,8 +151,8 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(440, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
@@ -131,12 +163,12 @@
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); // E5
-        osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16); // G5
-        osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24); // C6
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+        osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
+        osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24);
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
@@ -149,8 +181,8 @@
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(180, this.ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
@@ -163,8 +195,8 @@
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(120, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
@@ -177,8 +209,8 @@
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(90, this.ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.35);
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.start();
@@ -192,19 +224,19 @@
           const gain = this.ctx.createGain();
           osc.type = 'sine';
           osc.frequency.setValueAtTime(freq, now + start);
-          gain.gain.setValueAtTime(0.08, now + start);
+          gain.gain.setValueAtTime(0.04, now + start);
           gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
           osc.start(now + start);
           osc.stop(now + start + duration);
         };
-        playNote(261.63, 0, 0.15); // C4
-        playNote(329.63, 0.15, 0.15); // E4
-        playNote(392.00, 0.3, 0.15); // G4
-        playNote(523.25, 0.45, 0.15); // C5
-        playNote(659.25, 0.6, 0.15); // E5
-        playNote(1046.50, 0.75, 0.5); // C6
+        playNote(261.63, 0, 0.12);
+        playNote(329.63, 0.12, 0.12);
+        playNote(392.00, 0.24, 0.12);
+        playNote(523.25, 0.36, 0.12);
+        playNote(659.25, 0.48, 0.12);
+        playNote(1046.50, 0.6, 0.4);
       }
     };
   </script>
@@ -212,13 +244,11 @@
   <!-- ================= MASTER KOSA KATA DICTIONARY ================= -->
   <script>
     const DICTIONARY_RAW = [
-      "BACA", "TULIS", "MAKAN", "MINUM", "TIDUR", "MANDI", "JALAN", "LARI", "LOMPAT", "TERBANG", "BERENANG", "DUDUK", "BERDIRI", "MELIHAT", "MENDENGAR", "MEMASAK", "MENCOCI", "MENULIS", "MEMBACA", "MENYANYI", "MENARI", "BERMAIN", "BELAJAR", "BEKERJA", "BELANJA", "MEMBELI", "MENJUAL", "MEMBAWA", "MELEMPAR", "MENANGKAP", "MENENDANG", "MEMUKUL", "MENARIK", "MENDORONG", "MEMBUKA", "MENUTUP", "MEMILIH", "MENGAMBIL", "MEMBUANG", "MENYIMPAN", "MENCARI", "MENEMUKAN", "MEMBANTU", "MENOLONG", "MEMINJAM", "MEMBERI", "MENERIMA", "MEMINTA", "MENOLAK", "MELEPAS", "MEMAKAI", "MENJAGA", "MERAWAT", "MERUSAK", "MEMPERBAIKI", "MEMBUAT", "MENGGILING", "MEMOTONG", "MEMBELAH", "MENGIKAT", "MENANAM", "MEMANEN", "MENYIRAM", "MEMUPUK", "MENYAPU", "MENGGEPEL", "MENJEMUR", "MENYETRIKA", "MELIPAT", "MELETAKKAN", "MEMINDAH", "MENGGULUNG", "MENAHAN", "MENCOBA", "BERHASIL", "GAGAL", "MENANG", "KALAH", "MEJA", "KURSI", "LEMARI", "KASUR", "BANTAL", "GULING", "SELIMUT", "KELAMBU", "CERMIN", "JENDELA", "PINTU", "ATAP", "DINDING", "LANTAI", "PAGAR", "LAMPU", "KIPAS", "RADIO", "TELEVISI", "TELEPON", "LAPTOP", "KOMPUTER", "KAMERA", "JAMER", "KULKAS", "KOMPOR", "PANCI", "WAJAN", "PIRING", "GELAS", "MANGKUK", "SENDOK", "GARPU", "PISAU", "TALENAN", "TEKO", "EMBER", "GAYUNG", "HANDUK", "SABUN", "SHAMPOO", "SIKAT", "PASTA", "SISIR", "BAJU", "CELANA", "ROK", "JAKET", "KEMEJA", "KAOS", "TOPI", "SEPATU", "SANDAL", "KAOSKAKI", "SARUNGTANGAN", "DASI", "SABUK", "TAS", "DOMPET", "PAYUNG", "KACAMATA", "JAMTANGAN", "KALUNG", "CINCIN", "GELANG", "ANTING", "BUKU", "PENSIL", "PULPEN", "PENGHAPUS", "PENGGARIS", "SPIDOL", "KERTAS", "AMPLOP", "MATERAI", "GUNTING", "STAPLER", "LAKBAN", "JEPITAN", "KEMOCENG", "TIMBA", "SELANG", "KUNCI", "GEMBOK", "OBENG", "TANG", "PALU", "PAKU", "GERGAJI", "BOR", "TANGGA", "SEMEN", "BATA", "PASIR", "BATU", "KAYU", "BESI", "BAJA", "PLASTIK", "KARET", "KACA", "KAIN", "BENANG", "JARUM", "KANCING", "RESLETING", "MAP", "KALENDER", "NOTA", "KARTU", "UANG", "KOIN", "KOPER", "RANSEL", "SAKU", "JAKARTA", "BANDUNG", "SURABAYA", "MEDAN", "SEMARANG", "MAKASSAR", "PALEMBANG", "DENPASAR", "YOGYAKARTA", "SOLO", "MALANG", "BOGOR", "BEKASI", "DEPOK", "TANGERANG", "SERANG", "CILEGON", "SUKABUMI", "CIANJUR", "PURWAKARTA", "CIREBON", "GARUT", "TASIKMALAYA", "CIAMIS", "BANJAR", "MAJALENGKA", "SUMEDANG", "SUBANG", "KARAWANG", "INDRAMAYU", "BREBES", "TEGAL", "PEMALANG", "PEKALONGAN", "BATANG", "KENDAL", "DEMAK", "KUDUS", "PATI", "REMBANG", "BLORA", "GROBOGAN", "SRAGEN", "BOYOLALI", "KLATEN", "SUKOHARJO", "WONOGIRI", "KARANGANYAR", "KEBUMEN", "PURWOREJO", "CILACAP", "BANYUMAS", "PURBALINGGA", "BANJARNEGARA", "WONOSOBO", "TEMANGGUNG", "MAGELANG", "SALATIGA", "AMBARAWA", "UNGARAN", "NGAWI", "MAGETAN", "MADIUN", "PONOROGO", "PACITAN", "TRENGGALEK", "TULUNGAGUNG", "BLITAR", "KEDIRI", "NGANJUK", "JOMBANG", "MOJOKERTO", "SIDOARJO", "GRESIK", "LAMONGAN", "TUBAN", "BOJONEGORO", "PASURUAN", "PROBOLINGGO", "LUMAJANG", "JEMBER", "BONDOWOSO", "SITUBONDO", "BANYUWANGI", "BANGKALAN", "SAMPANG", "PAMEKASAN", "SUMENEP", "SINGARAJA", "GIANYAR", "TABANAN", "KLUNGKUNG", "KARANGASEM", "NEGARA", "BANGLI", "MATARAM", "BIMA", "KUPANG", "ENDE", "MAUMERE", "PONTIANAK", "SINGKAWANG", "SAMBAS", "SANGGAU", "SINTANG", "KETAPANG", "BANJARMASIN", "BANJARBARU", "MARTAPURA", "RANTAU", "KANDANGAN", "BARABAI", "AMUNTAI", "TANJUNG", "PELAIHARI", "MARABAHAN", "BATULICIN", "KOTABARU", "SAMARINDA", "BALIKPAPAN", "BONTANG", "TARAKAN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MANADO", "BITUNG", "TOMOHON", "GORONTALO", "PALU", "POSO", "KENDARI", "BAUBAU", "TOKYO", "SEOUL", "BEIJING", "BANGKOK", "MANILA", "LONDON", "PARIS", "BERLIN", "ROMA", "MADRID", "MOSKOW", "KAIRO", "SYDNEY", "NEWYORK", "DUBAI", "SOEKARNO", "HATTA", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN", "KARTINI", "SUDIRMAN", "DIPONEGORO", "GAJAHMADA", "JAYABAYA", "HAYAMWURUK", "RAFFI", "NAGITA", "BAIM", "PAULA", "DEDDY", "CORBUZIER", "SULE", "ANDRE", "TAULANY", "VINCENT", "DESTA", "TULUS", "RAISA", "ISYANA", "AFGAN", "ROSSA", "JUDIKA", "ARILASSO", "ONCE", "IWANFALS", "CHRISYE", "AGNEZMO", "ANANG", "ASHANTY", "AUREL", "ATTA", "THARIQ", "FUJI", "FADIL", "JAIDI", "RADITYA", "DIKA", "ERNEST", "PRAKASA", "PANDJI", "BABE", "CABITA", "MARSHAL", "JEFRI", "NICHOL", "REZA", "RAHADIAN", "VINO", "BASTIAN", "IQBAAL", "RAMADHAN", "ANGGA", "YUNANDA", "SYIFA", "HADJU", "PRILLY", "LAUDYA", "BELLA", "DIAN", "SASTRO", "NICHOLAS", "SAPUTRA", "LUNA", "MAYA", "GADING", "MARTEN", "GISEL", "GEMPI", "CIPUNG", "RAYYANZA", "RAFATHAR", "ARHAN", "ASNAWI", "ERNANDO", "HUBNER", "STRUICK", "IVAN", "GUNAWAN", "RUBEN", "ONSU", "SARWENDAH", "BETRAND", "PETO", "DENNY", "CAGUR", "SUMARGO", "UNTUNG", "ARIE", "KRITING", "INDAH", "PERMATASARI", "GEPAMUNGKAS", "BENU", "MARLO", "MARCO", "JOVI", "LOPEZ", "ANDOVI", "SKINNY", "CHANDRA", "LIOW", "JEROME", "POLIN", "JESS", "LIMIT", "SISCA", "KOHL", "ALSHAD", "AHMAD", "TIARA", "ANDINI", "LYODRA", "GINTING", "ZIVA", "MAGNOLYA", "KEISYA", "LEVRONKA", "MAHALINI", "RIZKY", "FEBIAN", "PUTRI", "DELINA", "RIZWAN", "FERDI", "AZIZAH", "SALSHA", "DEVANO", "DANENDRA", "IIS", "DAHLIA", "KING", "NASSAR", "SOIMAH", "INUL", "DARATISTA", "DEWI", "PERSSIK", "LESTI", "KEJORA", "RIZKY", "BILLAR", "FILDAN", "KRESEK", "SENTER", "LILIN", "KOREK", "CELENGAN", "MACOTA", "SYAL", "MASKER", "HELM", "PARFUM", "BEDAK", "LIPSTIK", "BLENDER", "MIXER", "OVEN", "TABUNG", "SERBET", "TISSUE", "MOUSE", "KEYBOARD", "LAYAR", "LENSA", "TRIPOD", "HAPE", "CASAN", "BATERAI", "KABEL", "SAKLAR", "SPEAKER", "GITAR", "PIANO", "DRUM", "BIOLA", "SULING", "PIANIKA", "RELA", "JANGKA", "STAMPEL", "TINTA", "LEM", "KAPAS", "KAPUR", "CAT", "KUAS", "SEPAKBOLA", "RAKET", "KOK", "GAWANG", "JARING", "MATRAS", "TRUK", "BUS", "PERAHU", "ROKET", "STASIUN", "JEMBATAN", "TROTOAR", "HALTE", "RAMBU", "MELUKIS", "MENGGAMBAR", "BERBICARA", "TERTAWA", "MENANGIS", "TERSENYUM", "BERPIKIR", "BERANGKAT", "PULANG", "DATANG", "PERGI", "MASUK", "KELUAR", "NAIK", "TURUN", "BERHENTI", "LANJUT", "SETUJU", "INGAT", "LUPA", "TAHU", "FAHAM", "MENGERTI", "BERDOA", "IBADAH", "SHOLAT", "SEDEKAH", "PUASA", "MEMELUK", "CIUM", "JABAT", "SALAM", "TEGUR", "SAPA", "PANGGIL", "BISIK", "TERIAK", "SORAK", "ADU", "TANDING", "DEBAT", "DISKUSI", "NGOBROL", "CERITA", "DONGENG", "KISAH", "CATAT", "CETAK", "COPY", "KETIK", "PASTE", "CORET", "WARNAI", "TEMPEL", "RAKIT", "BONGKAR", "PASANG", "STEL", "UKUR", "TIMBANG", "HITUNG", "JUMLAH", "BAGI", "KALI", "KURANG", "TAMBAH", "SORTIR", "AMBON", "JAYAPURA", "SORONG", "MERAUKE", "LAMPUNG", "BENGKULU", "JAMBI", "PADANG", "ACEH", "RIAU", "BATAM", "BANGKA", "BELITUNG", "SHANGHAI", "SINGAPURA", "KUALALUMPUR", "AMSTERDAM", "RIYADH", "MEKKAH", "MADINAH", "ISTANBUL", "ANKARA", "WASHINGTON", "LOSANGELES", "CHICAGO", "TORONTO", "RIO", "BUENOSAIRES", "MUMBAI", "DELHI", "DHAKA", "KARACHI", "BAGHDAD", "TEHRAN", "ATENA", "LIMA", "JUSTIN", "BIEBER", "JUNGKOOK", "JIMIN", "V", "SUGA", "JHOPE", "JIN", "RM", "BLACKPINK", "LISA", "JENNIE", "JISOO", "ROSE", "CRISTIANO", "RONALDO", "LIONEL", "MESSI", "NEYMAR", "MBAPPE", "HAALAND", "SALAH", "ROONEY", "BECKHAM", "ZIDANE", "MARADONA", "PELE", "JORDAN", "LEBRON", "KOBE", "CURRY", "ELON", "MUSK", "MARK", "ZUCKERBERG", "BILL", "GATES", "STEVE", "JOBS", "ALBERT", "EINSTEIN", "NEWTON", "GALILEO", "TESLA", "EDISON", "ARISTOTELES", "PLATO", "SOCRATES", "SHAKESPEARE", "MOZART", "BEETHOVEN", "CHOPIN", "PICASSO", "VINCI", "COLUMBUS", "MANGKUBUMI", "THAMRIN", "ATTA", "HALILINTAR", "GIAS", "GIBRAN"
+      "BACA", "TULIS", "MAKAN", "MINUM", "TIDUR", "MANDI", "JALAN", "LARI", "LOMPAT", "TERBANG", "BERENANG", "DUDUK", "BERDIRI", "MELIHAT", "MENDENGAR", "MEMASAK", "MENCOCI", "MENULIS", "MEMBACA", "MENYANYI", "MENARI", "BERMAIN", "BELAJAR", "BEKERJA", "BELANJA", "MEMBELI", "MENJUAL", "MEMBAWA", "MELEMPAR", "MENANGKAP", "MENENDANG", "MEMUKUL", "MENARIK", "MENDORONG", "MEMBUKA", "MENUTUP", "MEMILIH", "MENGGILING", "MEMOTONG", "MEMBELAH", "MENGIKAT", "MENANAM", "MEMANEN", "MENYIRAM", "MEMUPUK", "MENYAPU", "MENGGEPEL", "MENJEMUR", "MENYETRIKA", "MELIPAT", "MELETAKKAN", "MEMINDAH", "MENGGULUNG", "MENAHAN", "MENCOBA", "BERHASIL", "GAGAL", "MENANG", "KALAH", "MEJA", "KURSI", "LEMARI", "KASUR", "BANTAL", "GULING", "SELIMUT", "KELAMBU", "CERMIN", "JENDELA", "PINTU", "ATAP", "DINDING", "LANTAI", "PAGAR", "LAMPU", "KIPAS", "RADIO", "TELEVISI", "TELEPON", "LAPTOP", "KOMPUTER", "KAMERA", "JAMER", "KULKAS", "KOMPOR", "PANCI", "WAJAN", "PIRING", "GELAS", "MANGKUK", "SENDOK", "GARPU", "PISAU", "TALENAN", "TEKO", "EMBER", "GAYUNG", "HANDUK", "SABUN", "SHAMPOO", "SIKAT", "PASTA", "SISIR", "BAJU", "CELANA", "ROK", "JAKET", "KEMEJA", "KAOS", "TOPI", "SEPATU", "SANDAL", "KAOSKAKI", "SARUNGTANGAN", "DASI", "SABUK", "TAS", "DOMPET", "PAYUNG", "KACAMATA", "JAMTANGAN", "KALUNG", "CINCIN", "GELANG", "ANTING", "BUKU", "PENSIL", "PULPEN", "PENGHAPUS", "PENGGARIS", "SPIDOL", "KERTAS", "AMPLOP", "MATERAI", "GUNTING", "STAPLER", "LAKBAN", "JEPITAN", "KEMOCENG", "TIMBA", "SELANG", "KUNCI", "GEMBOK", "OBENG", "TANG", "PALU", "PAKU", "GERGAJI", "BOR", "TANGGA", "SEMEN", "BATA", "PASIR", "BATU", "KAYU", "BESI", "BAJA", "PLASTIK", "KARET", "KACA", "KAIN", "BENANG", "JARUM", "KANCING", "RESLETING", "MAP", "KALENDER", "NOTA", "KARTU", "UANG", "KOIN", "KOPER", "RANSEL", "SAKU", "JAKARTA", "BANDUNG", "SURABAYA", "MEDAN", "SEMARANG", "MAKASSAR", "PALEMBANG", "DENPASAR", "YOGYAKARTA", "SOLO", "MALANG", "BOGOR", "BEKASI", "DEPOK", "TANGERANG", "SERANG", "CILEGON", "SUKABUMI", "CIANJUR", "PURWAKARTA", "CIREBON", "GARUT", "TASIKMALAYA", "CIAMIS", "BANJAR", "MAJALENGKA", "SUMEDANG", "SUBANG", "KARAWANG", "INDRAMAYU", "BREBES", "TEGAL", "PEMALANG", "PEKALONGAN", "BATANG", "KENDAL", "DEMAK", "KUDUS", "PATI", "REMBANG", "BLORA", "GROBOGAN", "SRAGEN", "BOYOLALI", "KLATEN", "SUKOHARJO", "WONOGIRI", "KARANGANYAR", "KEBUMEN", "PURWOREJO", "CILACAP", "BANYUMAS", "PURBALINGGA", "BANJARNEGARA", "WONOSOBO", "TEMANGGUNG", "MAGELANG", "SALATIGA", "AMBARAWA", "UNGARAN", "NGAWI", "MAGETAN", "MADIUN", "PONOROGO", "PACITAN", "TRENGGALEK", "TULUNGAGUNG", "BLITAR", "KEDIRI", "NGANJUK", "JOMBANG", "MOJOKERTO", "SIDOARJO", "GRESIK", "LAMONGAN", "TUBAN", "BOJONEGORO", "PASURUAN", "PROBOLINGGO", "LUMAJANG", "JEMBER", "BONDOWOSO", "SITUBONDO", "BANYUWANGI", "BANGKALAN", "SAMPANG", "PAMEKASAN", "SUMENEP", "SINGARAJA", "GIANYAR", "TABANAN", "KLUNGKUNG", "KARANGASEM", "NEGARA", "BANGLI", "MATARAM", "BIMA", "KUPANG", "ENDE", "MAUMERE", "PONTIANAK", "SINGKAWANG", "SAMBAS", "SANGGAU", "SINTANG", "KETAPANG", "BANJARMASIN", "BANJARBARU", "MARTAPURA", "RANTAU", "KANDANGAN", "BARABAI", "AMUNTAI", "TANJUNG", "PELAIHARI", "MARABAHAN", "BATULICIN", "KOTABARU", "SAMARINDA", "BALIKPAPAN", "BONTANG", "TARAKAN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MANADO", "BITUNG", "TOMOHON", "GORONTALO", "PALU", "POSO", "KENDARI", "BAUBAU", "TOKYO", "SEOUL", "BEIJING", "BANGKOK", "MANILA", "LONDON", "PARIS", "BERLIN", "ROMA", "MADRID", "MOSKOW", "KAIRO", "SYDNEY", "NEWYORK", "DUBAI", "SOEKARNO", "HATTA", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN", "KARTINI", "SUDIRMAN", "DIPONEGORO", "GAJAHMADA", "JAYABAYA", "HAYAMWURUK", "RAFFI", "NAGITA", "BAIM", "PAULA", "DEDDY", "CORBUZIER", "SULE", "ANDRE", "TAULANY", "VINCENT", "DESTA", "TULUS", "RAISA", "ISYANA", "AFGAN", "ROSSA", "JUDIKA", "ARILASSO", "ONCE", "IWANFALS", "CHRISYE", "AGNEZMO", "ANANG", "ASHANTY", "AUREL", "ATTA", "THARIQ", "FUJI", "FADIL", "JAIDI", "RADITYA", "DIKA", "ERNEST", "PRAKASA", "PANDJI", "BABE", "CABITA", "MARSHAL", "JEFRI", "NICHOL", "REZA", "RAHADIAN", "VINO", "BASTIAN", "IQBAAL", "RAMADHAN", "ANGGA", "YUNANDA", "SYIFA", "HADJU", "PRILLY", "LAUDYA", "BELLA", "DIAN", "SASTRO", "NICHOLAS", "SAPUTRA", "LUNA", "MAYA", "GADING", "MARTEN", "GISEL", "GEMPI", "CIPUNG", "RAYYANZA", "RAFATHAR", "ARHAN", "ASNAWI", "ERNANDO", "HUBNER", "STRUICK", "IVAN", "GUNAWAN", "RUBEN", "ONSU", "SARWENDAH", "BETRAND", "PETO", "DENNY", "CAGUR", "SUMARGO", "UNTUNG", "ARIE", "KRITING", "INDAH", "PERMATASARI", "GEPAMUNGKAS", "BENU", "MARLO", "MARCO", "JOVI", "LOPEZ", "ANDOVI", "SKINNY", "CHANDRA", "LIOW", "JEROME", "POLIN", "JESS", "LIMIT", "SISCA", "KOHL", "ALSHAD", "AHMAD", "TIARA", "ANDINI", "LYODRA", "GINTING", "ZIVA", "MAGNOLYA", "KEISYA", "LEVRONKA", "MAHALINI", "RIZKY", "FEBIAN", "PUTRI", "DELINA", "RIZWAN", "FERDI", "AZIZAH", "SALSHA", "DEVANO", "DANENDRA", "IIS", "DAHLIA", "KING", "NASSAR", "SOIMAH", "INUL", "DARATISTA", "DEWI", "PERSSIK", "LESTI", "KEJORA", "RIZKY", "BILLAR", "FILDAN", "KRESEK", "SENTER", "LILIN", "KOREK", "CELENGAN", "MACOTA", "SYAL", "MASKER", "HELM", "PARFUM", "BEDAK", "LIPSTIK", "BLENDER", "MIXER", "OVEN", "TABUNG", "SERBET", "TISSUE", "MOUSE", "KEYBOARD", "LAYAR", "LENSA", "TRIPOD", "HAPE", "CASAN", "BATERAI", "KABEL", "SAKLAR", "SPEAKER", "GITAR", "PIANO", "DRUM", "BIOLA", "SULING", "PIANIKA", "RELA", "JANGKA", "STAMPEL", "TINTA", "LEM", "KAPAS", "KAPUR", "CAT", "KUAS", "SEPAKBOLA", "RAKET", "KOK", "GAWANG", "JARING", "MATRAS", "TRUK", "BUS", "PERAHU", "ROKET", "STASIUN", "JEMBATAN", "TROTOAR", "HALTE", "RAMBU", "MELUKIS", "MENGGAMBAR", "BERBICARA", "TERTAWA", "MENANGIS", "TERSENYUM", "BERPIKIR", "BERANGKAT", "PULANG", "DATANG", "PERGI", "MASUK", "KELUAR", "NAIK", "TURUN", "BERHENTI", "LANJUT", "SETUJU", "INGAT", "LUPA", "TAHU", "FAHAM", "MENGERTI", "BERDOA", "IBADAH", "SHOLAT", "SEDEKAH", "PUASA", "MEMELUK", "CIUM", "JABAT", "SALAM", "TEGUR", "SAPA", "PANGGIL", "BISIK", "TERIAK", "SORAK", "ADU", "TANDING", "DEBAT", "DISKUSI", "NGOBROL", "CERITA", "DONGENG", "KISAH", "CATAT", "CETAK", "COPY", "KETIK", "PASTE", "CORET", "WARNAI", "TEMPEL", "RAKIT", "BONGKAR", "PASANG", "STEL", "UKUR", "TIMBANG", "HITUNG", "JUMLAH", "BAGI", "KALI", "KURANG", "TAMBAH", "SORTIR", "AMBON", "JAYAPURA", "SORONG", "MERAUKE", "LAMPUNG", "BENGKULU", "JAMBI", "PADANG", "ACEH", "RIAU", "BATAM", "BANGKA", "BELITUNG", "SHANGHAI", "SINGAPURA", "KUALALUMPUR", "AMSTERDAM", "RIYADH", "MEKKAH", "MADINAH", "ISTANBUL", "ANKARA", "WASHINGTON", "LOSANGELES", "CHICAGO", "TORONTO", "RIO", "BUENOSAIRES", "MUMBAI", "DELHI", "DHAKA", "KARACHI", "BAGHDAD", "TEHRAN", "ATENA", "LIMA", "JUSTIN", "BIEBER", "JUNGKOOK", "JIMIN", "V", "SUGA", "JHOPE", "JIN", "RM", "BLACKPINK", "LISA", "JENNIE", "JISOO", "ROSE", "CRISTIANO", "RONALDO", "LIONEL", "MESSI", "NEYMAR", "MBAPPE", "HAALAND", "SALAH", "ROONEY", "BECKHAM", "ZIDANE", "MARADONA", "PELE", "JORDAN", "LEBRON", "KOBE", "CURRY", "ELON", "MUSK", "MARK", "ZUCKERBERG", "BILL", "GATES", "STEVE", "JOBS", "ALBERT", "EINSTEIN", "NEWTON", "GALILEO", "TESLA", "EDISON", "ARISTOTELES", "PLATO", "SOCRATES", "SHAKESPEARE", "MOZART", "BEETHOVEN", "CHOPIN", "PICASSO", "VINCI", "COLUMBUS", "MANGKUBUMI", "THAMRIN", "ATTA", "HALILINTAR", "GIAS", "GIBRAN"
     ];
 
-    // Prosesing dictionary dinamis memisahkan EASY, MEDIUM, dan HARD
     const KATA_MASTER = { EASY: [], MEDIUM: [], HARD: [] };
     
-    // Normalisasi dan saring database kosa kata
     DICTIONARY_RAW.forEach(item => {
       const cleanWord = item.replace(/[^A-Za-z]/g, '').toUpperCase();
       if (cleanWord.length >= 3) {
@@ -232,375 +262,375 @@
       }
     });
 
-    // Cegah bila ada slot kosong
     if (KATA_MASTER.EASY.length === 0) KATA_MASTER.EASY = ["BACA", "MEJA", "BUKU"];
     if (KATA_MASTER.MEDIUM.length === 0) KATA_MASTER.MEDIUM = ["JAKARTA", "BANDUNG", "LEMARI"];
     if (KATA_MASTER.HARD.length === 0) KATA_MASTER.HARD = ["KEMERDEKAAN", "KOMPUTER", "TELEVISI"];
   </script>
 
   <!-- ================= TOP NAVIGATION / HEADER ================= -->
-  <header class="bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500" id="mainHeader">
-    <div class="max-w-6xl mx-auto flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <!-- SVG Siluet Kota Hijau -->
-        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24">
-          <path d="M19 2C19 2 17 2 17 4V20H15V12H13V20H11V8H9V20H7V14H5V20H3V22H21V2H19ZM9 10H11V12H9V10ZM9 14H11V16H9V14ZM15 14H17V16H15V14ZM15 18H17V20H15V18ZM19 6H21V8H19V6ZM19 10H21V12H19V10ZM13 14H15V16H13V14ZM13 18H15V20H13V18Z"/>
-        </svg>
-        <span class="text-xl font-extrabold tracking-wide uppercase">Curi-Curi Kata</span>
+  <header class="bg-slate-950 text-white px-4 py-1.5 border-b border-emerald-950 shrink-0" id="mainHeader">
+    <div class="max-w-4xl mx-auto flex justify-between items-center">
+      <div class="flex items-center space-x-2">
+        <span class="text-xs uppercase font-black tracking-widest text-emerald-400 mono-font">CURI KATA v3.0</span>
       </div>
-      <div class="flex space-x-2">
-        <button onclick="toggleLeaderboardModal()" class="bg-emerald-700 hover:bg-emerald-800 text-xs px-3 py-2 rounded-lg font-semibold flex items-center transition">
-          🏆 Papan Peringkat
-        </button>
-      </div>
+      <button onclick="toggleLeaderboardModal()" class="bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[10px] px-2.5 py-0.5 rounded font-black transition mono-font">
+        🏆 LEADERBOARD
+      </button>
     </div>
   </header>
 
   <!-- ================= MAIN CONTAINER ================= -->
-  <main class="flex-grow flex flex-col justify-center items-center p-4 max-w-6xl w-full mx-auto">
+  <main class="flex-grow flex flex-col justify-center items-center p-2 overflow-hidden relative w-full max-w-4xl mx-auto">
     
-    <!-- ================= SCENE 1: MENU UTAMA (GREEN & WHITE URBAN) ================= -->
-    <div id="menuScene" class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-emerald-100 overflow-hidden transition-all transform duration-300">
+    <!-- ================= SCENE 1: MENU UTAMA ================= -->
+    <div id="menuScene" class="w-full max-w-md bg-slate-950 border-2 border-emerald-500 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)] overflow-hidden flex flex-col justify-between max-h-full">
       
-      <!-- Eco-Urban City Banner -->
-      <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white relative overflow-hidden flex flex-col items-center justify-center text-center">
-        <div class="absolute inset-0 opacity-10">
-          <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" preserveAspectRatio="none">
-            <path d="M0,400 L80,380 L160,420 L240,350 L320,390 L400,320 L480,380 L560,340 L640,410 L720,370 L800,430 L800,600 L0,600 Z" fill="#ffffff" />
-          </svg>
-        </div>
-        <h1 class="text-4xl font-black tracking-tight mb-2 uppercase drop-shadow-md">Curi-Curi Kata</h1>
-        <p class="text-emerald-50 text-sm max-w-md">Kumpulkan kata rahasia yang tersembunyi di kota hijau atau taklukkan monster apokaliptik pembawa kehancuran!</p>
+      <!-- Premium Arcady Logo Banner -->
+      <div class="p-5 text-center shrink-0 border-b border-emerald-900 bg-gradient-to-b from-slate-900 to-slate-950">
+        <h1 id="menuLogo" class="text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-400">Curi-Curi Kata</h1>
+        <p class="text-emerald-500/70 text-[9px] uppercase tracking-widest font-black mt-1.5 mono-font">Arcade Lexical Warfare</p>
       </div>
 
-      <!-- Settings & Controls Form -->
-      <div class="p-6 md:p-8 space-y-6">
+      <!-- Settings Form -->
+      <div class="p-4 space-y-4 overflow-y-auto no-scrollbar text-xs">
         <!-- Input Nama -->
         <div>
-          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Nama Pencuri Kata:</label>
-          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-4 py-3 rounded-xl border-2 border-emerald-200 focus:border-emerald-500 focus:outline-none font-semibold text-slate-700" placeholder="Masukkan nama Anda...">
+          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Codename Pemain:</label>
+          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-3 py-1 rounded bg-slate-900 border border-emerald-800 focus:border-emerald-400 focus:outline-none font-bold text-emerald-300">
         </div>
 
-        <!-- Opsi Tampilkan Daftar Kata (Toggle) -->
-        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
+        <!-- Custom Compact Toggle -->
+        <div class="bg-slate-900/60 p-2 rounded border border-emerald-950 flex items-center justify-between">
           <div>
-            <label class="block text-slate-800 font-bold text-sm">Daftar Kata yang Dicari</label>
-            <span class="text-xs text-slate-500" id="hintVisibilityText">Aktif: Daftar kata target ditampilkan jelas.</span>
+            <label class="block text-slate-300 font-bold text-[11px]">Daftar Kata yang Dicari</label>
+            <span class="text-[9px] text-slate-500" id="hintVisibilityText">Aktif: Target kata ditampilkan jelas.</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer select-none">
             <input type="checkbox" id="showWordToggle" checked class="sr-only peer" onchange="toggleOptionText()">
-            <div class="w-14 h-7 bg-slate-300 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-600"></div>
+            <div class="w-9 h-4.5 bg-slate-800 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-emerald-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-emerald-400 after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-900/40 border border-emerald-900"></div>
           </label>
         </div>
 
         <!-- Pilihan Kesulitan (Difficulty) -->
         <div>
-          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Pilih Kesulitan:</label>
-          <div class="grid grid-cols-3 gap-3">
-            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-emerald-50 border-emerald-500 text-emerald-700">
-              <span class="text-base">EASY</span>
-              <span class="text-[10px] font-normal opacity-75">Grid 8x8</span>
+          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Pilih Kesulitan:</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-emerald-900/20 border-emerald-500 text-emerald-400">
+              <span class="text-[10px]">EASY</span>
+              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 8x8</span>
             </button>
-            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-white border-slate-200 text-slate-600 hover:border-emerald-300">
-              <span class="text-base">MEDIUM</span>
-              <span class="text-[10px] font-normal opacity-75">Grid 12x12</span>
+            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/50">
+              <span class="text-[10px]">MEDIUM</span>
+              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 12x12</span>
             </button>
-            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-3 px-4 rounded-xl font-bold border-2 text-center transition flex flex-col items-center justify-center bg-white border-slate-200 text-slate-600 hover:border-emerald-300">
-              <span class="text-base">HARD</span>
-              <span class="text-[10px] font-normal opacity-75">Grid 15x15</span>
+            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-1 px-1.5 rounded font-black border text-center transition flex flex-col items-center justify-center bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/50">
+              <span class="text-[10px]">HARD</span>
+              <span class="text-[8px] font-normal opacity-75 mono-font">Grid 15x15</span>
             </button>
           </div>
         </div>
 
         <!-- Pilihan Mode Game -->
         <div>
-          <label class="block text-slate-700 font-bold mb-2 text-sm uppercase tracking-wide">Pilih Mode Permainan:</label>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="block text-emerald-500 font-black mb-1 text-[9px] uppercase tracking-wider mono-font">Pilih Mode Permainan:</label>
+          <div class="grid grid-cols-2 gap-2">
             <!-- Casual -->
-            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-emerald-50 border-emerald-500">
-              <div class="p-2 rounded-lg bg-emerald-100 text-emerald-700">☕</div>
+            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-emerald-900/20 border-emerald-500">
+              <span class="text-xs">☕</span>
               <div>
-                <div class="font-extrabold text-emerald-900">CASUAL</div>
-                <div class="text-xs text-emerald-700">Santai tanpa batasan waktu atau beban stres.</div>
+                <div class="font-bold text-slate-200 text-[10px] leading-tight logo-font">CASUAL</div>
+                <div class="text-[8px] text-slate-500 leading-none mono-font">Tanpa batasan waktu.</div>
               </div>
             </button>
 
             <!-- Speedrun -->
-            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
-              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⚡</div>
+            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
+              <span class="text-xs">⚡</span>
               <div>
-                <div class="font-extrabold text-slate-900">SPEEDRUN</div>
-                <div class="text-xs text-slate-600">Selesaikan papan secepat mungkin! Waktu bertambah.</div>
+                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">SPEEDRUN</div>
+                <div class="text-[8px] text-slate-500 leading-none mono-font">Selesaikan cepat!</div>
               </div>
             </button>
 
             <!-- Time Challenge -->
-            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
-              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⏱️</div>
+            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
+              <span class="text-xs">⏱️</span>
               <div>
-                <div class="font-extrabold text-slate-900">TIME CHALLENGE</div>
-                <div class="text-xs text-slate-600">Selesaikan sebelum waktu dari sistem habis.</div>
+                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">TIME LIMIT</div>
+                <div class="text-[8px] text-slate-500 leading-none mono-font">Pacu sisa waktu.</div>
               </div>
             </button>
 
             <!-- Turn Base Battle -->
-            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-4 rounded-xl border-2 text-left transition flex items-start space-x-3 bg-white border-slate-200 hover:border-emerald-200">
-              <div class="p-2 rounded-lg bg-slate-100 text-slate-700">⚔️</div>
+            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-1.5 rounded border text-left transition flex items-center space-x-2 bg-slate-900 border-slate-800 hover:border-emerald-500/50">
+              <span class="text-xs">⚔️</span>
               <div>
-                <div class="font-extrabold text-slate-900">TURN BASE BATTLE</div>
-                <div class="text-xs text-slate-600">Sistem RPG seru! Hajar monster dengan mencuri kata!</div>
+                <div class="font-bold text-slate-300 text-[10px] leading-tight logo-font">RPG BATTLE</div>
+                <div class="text-[8px] text-slate-500 leading-none mono-font">Lawan Penjahat!</div>
               </div>
             </button>
           </div>
         </div>
-
-        <!-- Start Button -->
-        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-6 rounded-xl text-lg transition duration-200 shadow-lg transform active:scale-95 flex items-center justify-center space-x-2">
-          <span>MULAI PETUALANGAN</span>
-          <span>🚀</span>
-        </button>
       </div>
 
-      <!-- Eco-City Siluet Footer -->
-      <div class="bg-emerald-50 px-6 py-4 flex justify-between items-center border-t border-emerald-100 text-xs text-emerald-700">
-        <span>© 2026 Curi-Curi Kata • Edisi Premium</span>
-        <span>Aman & Ramah Lingkungan 🌱</span>
+      <!-- Start Button -->
+      <div class="p-3 bg-slate-900/80 border-t border-emerald-950 shrink-0">
+        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 font-black py-2 rounded text-xs transition duration-150 shadow-md flex items-center justify-center space-x-1.5 active:scale-95 logo-font">
+          <span>MASUK ARENA</span>
+          <span>🚀</span>
+        </button>
       </div>
     </div>
 
     <!-- ================= SCENE 2: GAMEPLAY (DYNAMIC STYLING) ================= -->
-    <div id="gameplayScene" class="hidden w-full">
+    <div id="gameplayScene" class="hidden w-full h-full flex flex-col gap-2 items-stretch justify-center overflow-hidden">
       
-      <!-- Grid Utama Membagi Layout Menjadi Kiri (RPG + Panel) dan Kanan (Papan Kata) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-start">
+      <!-- ============ THE DYNAMIC COMBAT / ARENA BACKPLATE (RUINED CITY WITH REALTIME LIGHTNING) ============ -->
+      <div id="battleArena" class="hidden w-full rounded-lg bg-apocalypse p-1 border border-red-950/60 overflow-hidden relative shrink-0 h-28">
         
-        <!-- KOLOM KIRI (Lebar 5/12): RPG Battle Arena (Jika aktif) & Panel Skor/Kata -->
-        <div class="lg:col-span-5 space-y-4">
-          
-          <!-- ============ RPG BATTLE ARENA (Turn-Based Arena) ============ -->
-          <div id="battleArena" class="hidden w-full rounded-2xl bg-apocalypse p-4 shadow-2xl relative border-2 border-red-950 overflow-hidden">
-            <!-- Floating damage container -->
-            <div id="damageOverlay" class="absolute inset-0 pointer-events-none z-30"></div>
+        <!-- Lightning Strike Layer (Triggered dynamically by keyframes) -->
+        <div class="absolute inset-0 lightning-layer pointer-events-none z-10"></div>
+        <div id="damageOverlay" class="absolute inset-0 pointer-events-none z-30"></div>
 
-            <!-- Sky & Apocalypse Horizon Background -->
-            <div class="absolute bottom-0 left-0 right-0 h-16 opacity-15 pointer-events-none flex justify-between items-end px-2">
-              <svg class="h-10 fill-red-800" viewBox="0 0 100 50" preserveAspectRatio="none">
-                <path d="M0,50 L0,20 L10,15 L15,25 L25,10 L35,30 L40,5 L50,25 L65,10 L80,35 L90,15 L100,20 L100,50 Z"/>
+        <!-- Ruined City Skyline SVG (Much clearer & layered destruction) -->
+        <div class="absolute inset-x-0 bottom-0 h-14 opacity-40 pointer-events-none z-0">
+          <svg class="w-full h-full fill-red-950" viewBox="0 0 400 60" preserveAspectRatio="none">
+            <!-- Jagged ruins, crumbled skyscrapers, fractured industrial grids -->
+            <path d="M0,60 L0,30 L10,30 L15,12 L20,12 L25,40 L35,22 L40,22 L45,45 L52,5 L62,5 L68,38 L75,25 L88,15 L92,30 L98,20 L105,42 L115,15 L125,15 L130,35 L140,8 L152,42 L165,22 L172,38 L185,5 L192,5 L202,30 L212,18 L225,40 L238,12 L248,32 L258,22 L268,45 L280,10 L288,10 L298,35 L310,15 L320,38 L332,8 L340,30 L352,20 L365,45 L378,15 L385,15 L400,32 L400,60 Z"/>
+          </svg>
+        </div>
+
+        <div class="grid grid-cols-2 gap-1 relative z-20 h-full items-center">
+          <!-- Hero Frame (Courageous Youth - Green Theme - Mario Style) -->
+          <div class="flex flex-col items-center justify-center h-full">
+            <span class="text-[7px] retro-font text-emerald-400 mb-0.5">HERO</span>
+            
+            <div id="heroSpriteContainer" class="sprite-idle relative w-12 h-16 flex items-center justify-center transition-all">
+              <svg id="heroSprite" class="w-full h-full" viewBox="0 0 100 140">
+                <!-- Mario Bros Style Proportions: Big Cap, Determined Pose, Full Body -->
+                <!-- Boots -->
+                <rect x="32" y="118" width="16" height="12" fill="#5c3a21" rx="3" />
+                <rect x="52" y="118" width="16" height="12" fill="#5c3a21" rx="3" />
+                <!-- Legs -->
+                <rect x="36" y="98" width="11" height="22" fill="#1d4ed8" />
+                <rect x="53" y="98" width="11" height="22" fill="#1d4ed8" />
+                <!-- Torso (Green Outfit) -->
+                <rect x="28" y="58" width="44" height="42" fill="#10b981" rx="8" />
+                <!-- Overalls / Suspender lines -->
+                <rect x="34" y="58" width="8" height="42" fill="#1e3a8a" />
+                <rect x="58" y="58" width="8" height="42" fill="#1e3a8a" />
+                <!-- Golden Buttons -->
+                <circle cx="38" cy="78" r="3" fill="#f59e0b" />
+                <circle cx="62" cy="78" r="3" fill="#f59e0b" />
+                <!-- Left Hand & Shield -->
+                <circle cx="18" cy="80" r="7" fill="#fbcfe8" />
+                <path d="M 10 65 L 22 60 L 22 85 Q 22 95 10 90 Z" fill="#1e40af" stroke="#60a5fa" stroke-width="2" />
+                <!-- Neck -->
+                <rect x="44" y="52" width="12" height="8" fill="#fbcfe8" />
+                <!-- Head -->
+                <circle cx="50" cy="38" r="18" fill="#fbcfe8" />
+                <!-- Hair (Brown sideburns) -->
+                <path d="M 32 30 C 32 24 36 20 42 20 L 42 38 Z" fill="#4a2c11" />
+                <path d="M 68 30 C 68 24 64 20 58 20 L 58 38 Z" fill="#4a2c11" />
+                <!-- Determined Eyes -->
+                <rect x="42" y="34" width="4" height="6" fill="#111827" />
+                <rect x="54" y="34" width="4" height="6" fill="#111827" />
+                <!-- Hero Smile -->
+                <path d="M 46 48 Q 50 52 54 48" stroke="#111827" stroke-width="2" fill="none" />
+                <!-- Green Cap (Flatcap/Mario Visor style) -->
+                <ellipse cx="50" cy="22" r="22" fill="#10b981" />
+                <path d="M 32 22 L 68 22 Q 74 24 74 28 L 68 28 Z" fill="#047857" />
+                <!-- Shield/Logo on Cap -->
+                <circle cx="50" cy="18" r="4" fill="#ffffff" />
+                <path d="M 48 16 L 52 16 L 50 20 Z" fill="#10b981" />
+                <!-- Right Arm holding Pixelated/Steel Sword -->
+                <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 72px 90px;">
+                  <rect x="70" y="75" width="8" height="20" fill="#10b981" rx="2" />
+                  <!-- Hand holding sword -->
+                  <circle cx="74" cy="85" r="7" fill="#fbcfe8" />
+                  <!-- Sword Hilt -->
+                  <rect x="68" y="70" width="22" height="4" fill="#f59e0b" />
+                  <rect x="78" y="74" width="4" height="10" fill="#78350f" />
+                  <!-- Blade -->
+                  <path d="M 77 70 L 77 25 L 81 20 L 85 25 L 85 70 Z" fill="#cbd5e1" stroke="#475569" stroke-width="1.5" />
+                </g>
               </svg>
-              <svg class="h-14 fill-red-950" viewBox="0 0 100 50" preserveAspectRatio="none">
-                <path d="M0,50 L5,30 L15,10 L30,40 L45,15 L60,35 L75,5 L90,40 L100,30 L100,50 Z"/>
-              </svg>
             </div>
-
-            <div class="grid grid-cols-2 gap-2 relative z-10 py-1">
-              
-              <!-- Player Column -->
-              <div class="flex flex-col items-center justify-center">
-                <span class="text-[9px] retro-font text-emerald-400 mb-1">HERO (KITA)</span>
-                
-                <!-- Animated Hero Sprite Container -->
-                <div id="heroSpriteContainer" class="sprite-idle relative w-16 h-20 flex items-center justify-center mb-1 transition-all">
-                  <svg id="heroSprite" class="w-full h-full" viewBox="0 0 100 120">
-                    <!-- Hair/Helmet -->
-                    <path d="M 28 40 Q 50 10 72 40 Z" fill="#3b82f6"/>
-                    <rect x="35" y="30" width="30" height="15" fill="#1d4ed8" rx="2" />
-                    <!-- Head -->
-                    <circle cx="50" cy="45" r="20" fill="#fbcfe8"/>
-                    <!-- Eyes -->
-                    <circle cx="43" cy="42" r="3.5" fill="#1e2937"/>
-                    <circle cx="57" cy="42" r="3.5" fill="#1e2937"/>
-                    <circle cx="45" cy="40" r="1.2" fill="#ffffff"/>
-                    <circle cx="59" cy="40" r="1.2" fill="#ffffff"/>
-                    <path d="M 45 52 Q 50 56 55 52" stroke="#1e2937" stroke-width="2.5" fill="none"/>
-                    <!-- Body Armor -->
-                    <rect x="32" y="65" width="36" height="40" rx="6" fill="#10b981" stroke="#047857" stroke-width="2"/>
-                    <path d="M 50 65 L 50 105" stroke="#047857" stroke-width="2"/>
-                    <!-- Shield -->
-                    <path d="M 12 70 Q 24 65 24 85 Q 24 105 12 100 Z" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
-                    <!-- Animated Sword -->
-                    <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 65px 95px;">
-                      <path d="M 68 95 L 88 50 L 96 54 L 76 99 Z" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
-                      <rect x="62" y="90" width="18" height="6" rx="1" fill="#f59e0b" transform="rotate(-25 62 90)"/>
-                      <rect x="66" y="95" width="6" height="15" rx="1" fill="#78350f" transform="rotate(-25 66 95)"/>
-                    </g>
-                  </svg>
-                </div>
-                
-                <!-- HP Bar Player -->
-                <div class="w-full max-w-[120px] bg-neutral-800 rounded-full h-3 overflow-hidden border border-neutral-700">
-                  <div id="playerHpBar" class="bg-emerald-500 h-full w-full transition-all duration-300"></div>
-                </div>
-                <div class="text-[9px] retro-font text-white mt-1" id="playerHpText">100 / 100 HP</div>
-              </div>
-
-              <!-- Enemy Column -->
-              <div class="flex flex-col items-center justify-center">
-                <span class="text-[9px] retro-font text-red-500 mb-1">MONSTER</span>
-                
-                <!-- Animated Enemy Sprite Container -->
-                <div id="enemySpriteContainer" class="sprite-idle relative w-16 h-20 flex items-center justify-center mb-1 transition-all">
-                  <svg id="enemySprite" class="w-full h-full" viewBox="0 0 100 120">
-                    <!-- Horns -->
-                    <path d="M 22 35 Q 8 10 26 15" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
-                    <path d="M 78 35 Q 92 10 74 15" fill="#ef4444" stroke="#7f1d1d" stroke-width="3"/>
-                    <!-- Head -->
-                    <polygon points="20,35 80,35 90,75 50,105 10,75" fill="#991b1b" stroke="#450a0a" stroke-width="3"/>
-                    <!-- Angry Eyebrows -->
-                    <path d="M 28 44 L 44 50" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
-                    <path d="M 72 44 L 56 50" stroke="#facc15" stroke-width="4" stroke-linecap="round"/>
-                    <!-- Glowing Demon Eyes -->
-                    <polygon points="30,52 42,55 32,62" fill="#000000"/>
-                    <circle cx="35" cy="56" r="3" fill="#facc15"/>
-                    <polygon points="70,52 58,55 68,62" fill="#000000"/>
-                    <circle cx="65" cy="56" r="3" fill="#facc15"/>
-                    <!-- Spiky Mouth with long Fangs -->
-                    <rect x="34" y="78" width="32" height="12" fill="#450a0a" rx="2" />
-                    <polygon points="38,78 42,88 46,78" fill="#ffffff"/>
-                    <polygon points="54,78 58,88 62,78" fill="#ffffff"/>
-                  </svg>
-                </div>
-                
-                <!-- HP Bar Enemy -->
-                <div class="w-full max-w-[120px] bg-neutral-800 rounded-full h-3 overflow-hidden border border-neutral-700">
-                  <div id="enemyHpBar" class="bg-red-600 h-full w-full transition-all duration-300"></div>
-                </div>
-                <div class="text-[9px] retro-font text-white mt-1" id="enemyHpText">100 / 100 HP</div>
-              </div>
-
+            
+            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1 overflow-hidden border border-neutral-700 mt-0.5">
+              <div id="playerHpBar" class="bg-emerald-500 h-full w-full transition-all duration-200"></div>
             </div>
-
-            <!-- Combat Log Banner -->
-            <div class="mt-2 bg-black/60 p-1.5 rounded-lg text-center border border-red-900/40">
-              <p id="combatLog" class="text-[9px] text-amber-400 retro-font leading-relaxed">BERSIAPLAH! Monster menyerang setiap 15 detik!</p>
-            </div>
+            <div class="text-[7px] retro-font text-white mt-0.5" id="playerHpText">100 HP</div>
           </div>
 
-          <!-- ============ SCORE & STATS PANEL ============ -->
-          <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col justify-between" id="scorePanel">
+          <!-- Enemy Frame (Penjahat - Terrorist Style Outfit) -->
+          <div class="flex flex-col items-center justify-center h-full">
+            <span class="text-[7px] retro-font text-red-500 mb-0.5">PENJAHAT</span>
             
-            <div class="flex items-center justify-between border-b pb-3 mb-3">
-              <div>
-                <h3 class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Pemain</h3>
-                <p class="text-base font-extrabold text-slate-800" id="gamePlayerName">Pemain</p>
-              </div>
-              <div class="bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-[11px] font-bold" id="badgeDifficulty">
-                EASY
-              </div>
+            <div id="enemySpriteContainer" class="sprite-idle relative w-12 h-16 flex items-center justify-center transition-all">
+              <svg id="enemySprite" class="w-full h-full" viewBox="0 0 100 140">
+                <!-- Mario Bros Proportions Enemy: Rogue Terrorist Style -->
+                <!-- Combat Boots -->
+                <rect x="32" y="118" width="16" height="12" fill="#1e2937" rx="3" />
+                <rect x="52" y="118" width="16" height="12" fill="#1e2937" rx="3" />
+                <!-- Legs (Cargo Pants) -->
+                <rect x="36" y="98" width="11" height="22" fill="#7f1d1d" />
+                <rect x="53" y="98" width="11" height="22" fill="#7f1d1d" />
+                <rect x="34" y="104" width="4" height="8" fill="#450a0a" /> <!-- Pocket -->
+                <rect x="62" y="104" width="4" height="8" fill="#450a0a" /> <!-- Pocket -->
+                <!-- Torso (Tactical Utility Vest) -->
+                <rect x="28" y="58" width="44" height="42" fill="#374151" rx="8" />
+                <!-- Tactical Straps & Plates -->
+                <rect x="33" y="64" width="12" height="15" fill="#1f2937" rx="1" />
+                <rect x="55" y="64" width="12" height="15" fill="#1f2937" rx="1" />
+                <rect x="33" y="82" width="34" height="10" fill="#111827" rx="2" />
+                <!-- Neck -->
+                <rect x="44" y="52" width="12" height="8" fill="#111827" />
+                <!-- Head (Balaclava / Ski Mask) -->
+                <circle cx="50" cy="38" r="18" fill="#111827" />
+                <!-- Eye Hole Cutout -->
+                <rect x="38" y="32" width="24" height="8" fill="#fbcfe8" rx="2" />
+                <!-- Menacing Slanted Eyes -->
+                <polygon points="39,32 50,37 43,39" fill="#000000" />
+                <polygon points="61,32 50,37 57,39" fill="#000000" />
+                <circle cx="44" cy="36" r="1.5" fill="#ef4444" />
+                <circle cx="56" cy="36" r="1.5" fill="#ef4444" />
+                <!-- Balaclava Mouth Opening -->
+                <ellipse cx="50" cy="48" r="5" fill="#111827" />
+                <!-- Angry Frown inside cutout -->
+                <path d="M 47 48 Q 50 45 53 48" stroke="#ef4444" stroke-width="1.5" fill="none" />
+                <!-- Left Hand holding heavy Dynamite Pack -->
+                <circle cx="18" cy="80" r="7" fill="#111827" />
+                <rect x="8" y="70" width="8" height="18" fill="#b91c1c" rx="1" />
+                <line x1="12" y1="70" x2="12" y2="64" stroke="#f59e0b" stroke-width="1.5" />
+                <!-- Right Hand holding Red Metal Crowbar -->
+                <circle cx="82" cy="80" r="7" fill="#111827" />
+                <path d="M 80 90 L 85 50 Q 88 40 95 44 L 92 52" stroke="#dc2626" stroke-width="4.5" stroke-linecap="round" fill="none" />
+              </svg>
             </div>
-
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-2 gap-3 mb-4">
-              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100" id="boxScore">
-                <span class="block text-[10px] text-slate-400 font-bold uppercase">Skor</span>
-                <span class="text-xl font-black text-emerald-600 animate-pulse" id="currentScore">0</span>
-              </div>
-              <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100" id="boxTimer">
-                <span class="block text-[10px] text-slate-400 font-bold uppercase" id="timerLabel">Waktu</span>
-                <span class="text-xl font-black text-slate-800" id="gameTimer">00:00</span>
-              </div>
+            
+            <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1 overflow-hidden border border-neutral-700 mt-0.5">
+              <div id="enemyHpBar" class="bg-red-600 h-full w-full transition-all duration-200"></div>
             </div>
-
-            <!-- List Target Words -->
-            <div>
-              <h4 class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-2">Temukan Kata Berikut:</h4>
-              <div id="targetWordList" class="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto pr-1">
-                <!-- Diisi Dinamis oleh JS -->
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="mt-4 pt-3 border-t flex space-x-2">
-              <button onclick="surrenderGame()" class="flex-1 py-1.5 px-3 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 font-bold text-xs transition">
-                🏳️ Menyerah
-              </button>
-              <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-1.5 px-3 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs transition">
-                🔄 Reset Papan
-              </button>
-            </div>
-
+            <div class="text-[7px] retro-font text-white mt-0.5" id="enemyHpText">100 HP</div>
           </div>
         </div>
 
-        <!-- KOLOM KANAN (Lebar 7/12): Board Game (Compact Screen) -->
-        <div class="lg:col-span-7 flex justify-center">
-          <div class="bg-white rounded-2xl p-4 shadow-lg border border-slate-200 select-none w-full max-w-[450px]" id="gridBoardContainer">
-            
-            <!-- Grid Wrapper (Lebih Ringkas & Padat) -->
-            <div id="wordGrid" class="grid mx-auto gap-0.5 p-1.5 bg-slate-100 rounded-xl cursor-pointer select-none">
-              <!-- Diisi Dinamis oleh JS -->
-            </div>
+        <!-- Floating Arena Log overlay -->
+        <div class="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded border border-red-900/30 z-30">
+          <p id="combatLog" class="text-[7px] text-amber-400 retro-font leading-none">PENJAHAT SIAP MENYERANG!</p>
+        </div>
+      </div>
 
-            <!-- Touch / Selection Info Hint -->
-            <p class="text-center text-[11px] text-slate-400 mt-3" id="boardHintText">
-              💡 Seret huruf pertama menuju huruf terakhir secara mendatar, tegak, maupun miring.
-            </p>
+      <!-- ============ REDESIGNED MINIMALIST HUD PANEL (Extreme Space-Saver) ============ -->
+      <div class="bg-slate-950 border border-emerald-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0" id="scorePanel">
+        
+        <!-- Left: Quick Identity Pill -->
+        <div class="flex items-center space-x-2 shrink-0 justify-between md:justify-start">
+          <div class="leading-none">
+            <span class="text-[7px] text-slate-500 uppercase font-black tracking-widest mono-font block">PLAYER AGENT</span>
+            <span class="text-[10px] font-black text-emerald-300 uppercase tracking-tight" id="gamePlayerName">Pemain</span>
+          </div>
+          <span class="bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font" id="badgeDifficulty">
+            EASY
+          </span>
+        </div>
+
+        <!-- Center: Stats Dashboard (Super Minimalist Pill) -->
+        <div class="grid grid-cols-2 gap-1.5 text-xs shrink-0 bg-slate-900/60 p-1.5 rounded border border-emerald-950">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-[8px] text-slate-500 font-bold uppercase mono-font">SCORE:</span>
+            <span class="text-[11px] font-black text-emerald-400 mono-font" id="currentScore">0</span>
+          </div>
+          <div class="flex items-center space-x-1.5 border-l border-emerald-950 pl-1.5">
+            <span class="text-[8px] text-slate-500 font-bold uppercase id-label mono-font" id="timerLabel">TIME:</span>
+            <span class="text-[11px] font-black text-slate-200 mono-font" id="gameTimer">00:00</span>
           </div>
         </div>
 
+        <!-- Right: Horizontal Target Word Strip -->
+        <div class="flex-grow min-w-0 flex items-center gap-1.5">
+          <div class="text-[7px] text-slate-500 uppercase tracking-widest font-black mono-font leading-none shrink-0 hidden lg:block">TARGET:</div>
+          <div id="targetWordList" class="flex-grow flex flex-row overflow-x-auto whitespace-nowrap gap-1 px-1.5 py-1 no-scrollbar select-none bg-slate-900/40 rounded border border-emerald-950/40">
+            <!-- Diisi Dinamis oleh JS -->
+          </div>
+        </div>
+
+        <!-- Extreme Right: Tiny Control pills -->
+        <div class="flex space-x-1 shrink-0 justify-end mt-1 md:mt-0">
+          <button onclick="surrenderGame()" class="py-0.5 px-1.5 rounded bg-red-950/30 border border-red-900/30 hover:bg-red-900/30 text-red-500 font-black text-[8px] uppercase tracking-wide mono-font transition">
+            🏳️ OUT
+          </button>
+          <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-0.5 px-1.5 rounded bg-emerald-950/40 border border-emerald-800/30 hover:bg-emerald-900/30 text-emerald-400 font-black text-[8px] uppercase tracking-wide mono-font transition">
+            🔄 RESET
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= WORD SEARCH BOARD FRAME (Optimized Space) ================= -->
+      <div class="flex-grow flex flex-col justify-center items-center w-full overflow-hidden p-1">
+        <div class="bg-slate-950 rounded-lg p-2 border border-emerald-950/60 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center" id="gridBoardContainer">
+          <!-- Grid Wrapper (Massively larger with optimized padding) -->
+          <div id="wordGrid" class="grid w-full h-full gap-[2px] p-1 bg-slate-900 rounded cursor-pointer select-none">
+            <!-- Diisi Dinamis oleh JS -->
+          </div>
+        </div>
       </div>
 
     </div>
 
   </main>
 
-  <!-- ================= FOOTER ================= -->
-  <footer class="bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500" id="mainFooter">
-    <p>Game **Curi-Curi Kata** didesain untuk asah otak & kecepatan motorik tangan.</p>
-  </footer>
-
   <!-- ================= MODAL: LEADERBOARD ================= -->
-  <div id="leaderboardModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all">
-      <div class="flex justify-between items-center border-b pb-4 mb-4">
-        <h3 class="text-xl font-bold text-slate-800 flex items-center">
-          🏆 Skor Terbaik Global
+  <div id="leaderboardModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-slate-950 border-2 border-emerald-500 rounded-xl max-w-xs w-full p-4 shadow-2xl text-xs">
+      <div class="flex justify-between items-center border-b border-emerald-900 pb-2 mb-2">
+        <h3 class="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center logo-font">
+          🏆 TOP AGENTS
         </h3>
-        <button onclick="toggleLeaderboardModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+        <button onclick="toggleLeaderboardModal()" class="text-emerald-500 hover:text-emerald-300 text-lg font-bold">&times;</button>
       </div>
       
-      <div class="space-y-3 max-h-[350px] overflow-y-auto" id="leaderboardContent">
-        <div class="text-center text-slate-500 py-6">Memuat data dari server...</div>
+      <div class="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar" id="leaderboardContent">
+        <div class="text-center text-slate-500 py-3 mono-font">CONNECTING SECURE NETWORK...</div>
       </div>
 
-      <div class="mt-6 pt-4 border-t">
-        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition">
-          Tutup
+      <div class="mt-4 pt-2 border-t border-emerald-900">
+        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 py-1.5 rounded font-black transition logo-font text-[10px]">
+          CLOSE REPORT
         </button>
       </div>
     </div>
   </div>
 
   <!-- ================= MODAL: GAME OVER / VICTORY ================= -->
-  <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transform scale-95 transition-all text-center">
-      <div id="resultEmoji" class="text-6xl mb-4">🎉</div>
-      <h3 id="resultTitle" class="text-2xl font-black text-slate-800 mb-2">Hebat! Kamu Menang!</h3>
-      <p id="resultText" class="text-slate-600 mb-6">Kamu berhasil mencuri semua kata dengan gemilang.</p>
+  <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-slate-950 border-2 border-emerald-500 rounded-xl max-w-xs w-full p-5 shadow-2xl text-center text-xs">
+      <div id="resultEmoji" class="text-3xl mb-1">🎉</div>
+      <h3 id="resultTitle" class="text-base font-black text-emerald-400 uppercase mb-1 logo-font">GAME END</h3>
+      <p id="resultText" class="text-slate-400 mb-3 text-[10px]">Detail operasi kata rahasia selesai.</p>
 
-      <div class="bg-emerald-50 rounded-xl p-4 mb-6 border border-emerald-100">
-        <div class="grid grid-cols-2 gap-4">
+      <div class="bg-slate-900 rounded p-2.5 mb-4 border border-emerald-950">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <span class="block text-xs text-slate-400 font-bold uppercase">Skor Akhir</span>
-            <span id="resultScore" class="text-2xl font-black text-emerald-600">0</span>
+            <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL POINTS</span>
+            <span id="resultScore" class="text-base font-black text-emerald-400 mono-font">0</span>
           </div>
           <div>
-            <span class="block text-xs text-slate-400 font-bold uppercase">Durasi Main</span>
-            <span id="resultTime" class="text-2xl font-black text-slate-800">00:00</span>
+            <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL DURATION</span>
+            <span id="resultTime" class="text-base font-black text-slate-200 mono-font">00:00</span>
           </div>
         </div>
       </div>
 
-      <div class="space-y-2">
-        <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition">
-          Kembali ke Menu Utama
-        </button>
-      </div>
+      <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-slate-950 py-1.5 rounded font-black transition logo-font text-[10px]">
+        MAIN MENU
+      </button>
     </div>
   </div>
 
   <!-- ================= GAME ENGINE & LOGIC SCRIPT ================= -->
   <script>
-    // State Game Utama
     let GAME_STATE = {
       playerName: "Pemain Baru",
       difficulty: "EASY", 
@@ -612,59 +642,61 @@
       timer: 0,
       timerInterval: null,
       score: 0,
-      showWordList: true, // Menyimpan setting visibilitas kata
+      showWordList: true,
       
-      // Khusus Turn Base Mode
       playerHp: 100,
       enemyHp: 100,
       turnInterval: null,
       combatTimer: 0,
 
-      // Interaction State
       isSelecting: false,
       startCell: null,
       selectedCells: []
     };
 
-    // Sinkronisasi teks opsi toggle menu utama
     function toggleOptionText() {
       const toggle = document.getElementById('showWordToggle');
       const text = document.getElementById('hintVisibilityText');
       if (toggle.checked) {
-        text.innerText = "Aktif: Daftar kata target ditampilkan jelas.";
+        text.innerText = "Aktif: Target kata ditampilkan jelas.";
       } else {
-        text.innerText = "Non-Aktif: Cari secara mandiri (kata disembunyikan).";
+        text.innerText = "Non-Aktif: Cari secara mandiri.";
       }
       AudioGame.playSelect();
     }
 
-    // Pilihan Kesulitan
     function selectDifficulty(diff) {
       GAME_STATE.difficulty = diff;
       document.querySelectorAll('.difficulty-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
-        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+        btn.classList.remove('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
+        btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-400');
       });
       const selectedBtn = document.getElementById(`btnDiff${diff}`);
-      selectedBtn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
-      selectedBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+      selectedBtn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-400');
+      selectedBtn.classList.add('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
       AudioGame.playSelect();
     }
 
-    // Pilihan Mode Game
     function selectMode(mode) {
       GAME_STATE.mode = mode;
+      
+      const logo = document.getElementById('menuLogo');
+      if (mode === 'TURN_BASE') {
+        logo.className = "text-3xl md:text-4xl font-black uppercase tracking-wider game-logo-red text-red-600 animate-pulse";
+      } else {
+        logo.className = "text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-400";
+      }
+
       document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
-        btn.classList.add('bg-white', 'border-slate-200', 'text-slate-600');
+        btn.classList.remove('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
+        btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-400');
       });
       const selectedBtn = document.getElementById(`btnMode${mode}`);
-      selectedBtn.classList.remove('bg-white', 'border-slate-200', 'text-slate-600');
-      selectedBtn.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700');
+      selectedBtn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-400');
+      selectedBtn.classList.add('bg-emerald-900/20', 'border-emerald-500', 'text-emerald-400');
       AudioGame.playSelect();
     }
 
-    // Mengambil kata acak berdasarkan difficulty dari database kosa kata raksasa
     function getRandomWords(difficulty) {
       const pool = KATA_MASTER[difficulty];
       const count = difficulty === 'EASY' ? 5 : (difficulty === 'MEDIUM' ? 8 : 10);
@@ -672,127 +704,87 @@
       return shuffled.slice(0, count);
     }
 
-    // Mempersiapkan Game
     function startGame() {
       AudioGame.init();
       const inputName = document.getElementById('playerNameInput').value.trim();
       GAME_STATE.playerName = inputName ? inputName : "Pencuri Kata";
       GAME_STATE.showWordList = document.getElementById('showWordToggle').checked;
       
-      // Set Grid Size
       if (GAME_STATE.difficulty === "EASY") GAME_STATE.gridSize = 8;
       else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.gridSize = 12;
       else GAME_STATE.gridSize = 15;
 
-      // Reset State
       GAME_STATE.score = 0;
       GAME_STATE.foundWords = [];
       GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
 
-      // Transisi Desain & Animasi Arena
       setupAesthetics();
-
-      // Bangun Grid
       buildGridBoard();
-
-      // Jalankan Timer
       startTimerEngine();
 
-      // Munculkan Scene Gameplay
       document.getElementById('menuScene').classList.add('hidden');
       document.getElementById('gameplayScene').classList.remove('hidden');
       
-      // Update data di panel
       document.getElementById('gamePlayerName').innerText = GAME_STATE.playerName;
       document.getElementById('badgeDifficulty').innerText = GAME_STATE.difficulty;
       document.getElementById('currentScore').innerText = GAME_STATE.score;
     }
 
-    // Menata ulang UI / Skema Warna berdasarkan mode
     function setupAesthetics() {
       const header = document.getElementById('mainHeader');
-      const footer = document.getElementById('mainFooter');
       const scorePanel = document.getElementById('scorePanel');
       const container = document.getElementById('gridBoardContainer');
       const arena = document.getElementById('battleArena');
-      const boardHint = document.getElementById('boardHintText');
-      const boxScore = document.getElementById('boxScore');
-      const boxTimer = document.getElementById('boxTimer');
 
       if (GAME_STATE.mode === 'TURN_BASE') {
-        // Mode Apokaliptik Peperangan (Merah Tua, Hitam, Abu Gelap)
-        document.body.className = "bg-neutral-950 text-slate-100 min-h-screen flex flex-col transition-colors duration-500";
-        header.className = "bg-red-950 text-red-100 shadow-xl p-4 border-b border-red-900 transition-colors duration-500";
-        footer.className = "bg-red-950 text-red-500 text-center py-6 text-sm mt-8 border-t border-red-900 transition-colors duration-500";
-        scorePanel.className = "bg-neutral-900 rounded-2xl p-5 shadow-2xl border border-red-900/50 flex flex-col justify-between text-slate-100";
-        container.className = "bg-neutral-900 rounded-2xl p-4 shadow-2xl border border-red-900/50 select-none w-full max-w-[450px]";
-        boardHint.className = "text-center text-[11px] text-red-400 mt-3";
-        boxScore.className = "bg-neutral-850 p-2.5 rounded-xl border border-red-950";
-        boxTimer.className = "bg-neutral-850 p-2.5 rounded-xl border border-red-950";
+        document.body.className = "bg-neutral-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
+        header.className = "bg-slate-950 text-red-500 px-4 py-1.5 border-b border-red-950 shrink-0";
+        scorePanel.className = "bg-neutral-950 border border-red-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0 text-slate-100";
+        container.className = "bg-neutral-950 rounded-lg p-2 border border-red-950 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center";
         
-        // Ganti warna teks & list
-        document.getElementById('gamePlayerName').className = "text-base font-extrabold text-red-400";
-        document.getElementById('badgeDifficulty').className = "bg-red-900/50 text-red-300 px-3 py-1 rounded-full text-[10px] font-bold";
+        document.getElementById('gamePlayerName').className = "text-[10px] font-black text-red-500 uppercase tracking-tight";
+        document.getElementById('badgeDifficulty').className = "bg-red-950 border border-red-900/40 text-red-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font";
         
         arena.classList.remove('hidden');
 
-        // Reset HP sistem tempur
         GAME_STATE.playerHp = 100;
         GAME_STATE.enemyHp = 100;
         updateHpBars();
-        document.getElementById('combatLog').innerText = "💀 KOTA DALAM BAHAYA! Monster siap menerjang setiap 15 detik!";
+        document.getElementById('combatLog').innerText = "💀 NETRALISIR PENJAHAT SEGERA!";
         
-        // Mulai serangan monster
         startCombatEngine();
-
       } else {
-        // Mode Normal (Hijau & Putih Menyenangkan)
-        document.body.className = "bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500";
-        header.className = "bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500";
-        footer.className = "bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500";
-        scorePanel.className = "bg-white rounded-2xl p-5 shadow-md border border-slate-100 flex flex-col justify-between text-slate-800";
-        container.className = "bg-white rounded-2xl p-4 shadow-lg border border-slate-200 select-none w-full max-w-[450px]";
-        boardHint.className = "text-center text-[11px] text-slate-400 mt-3";
-        boxScore.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100";
-        boxTimer.className = "bg-slate-50 p-2.5 rounded-xl border border-slate-100";
+        document.body.className = "bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
+        header.className = "bg-slate-950 text-emerald-400 px-4 py-1.5 border-b border-emerald-950 shrink-0";
+        scorePanel.className = "bg-slate-950 border border-emerald-950 rounded-lg p-2 flex flex-col md:flex-row md:items-center justify-between gap-1.5 shrink-0 text-slate-100";
+        container.className = "bg-slate-950 rounded-lg p-2 border border-emerald-950/60 select-none w-full max-w-[min(95vw,62dvh)] max-h-[min(95vw,62dvh)] aspect-square flex flex-col justify-center items-center";
 
-        document.getElementById('gamePlayerName').className = "text-base font-extrabold text-slate-800";
-        document.getElementById('badgeDifficulty').className = "bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-bold";
+        document.getElementById('gamePlayerName').className = "text-[10px] font-black text-emerald-300 uppercase tracking-tight";
+        document.getElementById('badgeDifficulty').className = "bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-1.5 py-0.5 rounded text-[8px] font-black mono-font";
 
         arena.classList.add('hidden');
         stopCombatEngine();
       }
     }
 
-    // ================= GRID GENERATOR ALGORITHM =================
     function buildGridBoard() {
       const size = GAME_STATE.gridSize;
-      
-      // Inisialisasi grid kosong
       GAME_STATE.grid = Array(size).fill(null).map(() => Array(size).fill(''));
 
-      // Letakkan semua kata ke dalam grid
       GAME_STATE.words.forEach(word => {
         let placed = false;
         let attempts = 0;
         const maxAttempts = 150;
 
-        // Arah peletakan kata berdasarkan tingkat kesulitan
         let directions = [];
         if (GAME_STATE.difficulty === "EASY") {
-          directions = [
-            [0, 1],  // Kanan
-            [1, 0]   // Bawah
-          ];
+          directions = [[0, 1], [1, 0]];
         } else if (GAME_STATE.difficulty === "MEDIUM") {
-          directions = [
-            [0, 1], [1, 0],   // Kanan, Bawah
-            [0, -1], [-1, 0]  // Kiri, Atas
-          ];
+          directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
         } else {
           directions = [
-            [0, 1], [1, 0], [0, -1], [-1, 0], // Mendatar & Tegak
-            [1, 1], [-1, -1], [1, -1], [-1, 1] // Diagonal
+            [0, 1], [1, 0], [0, -1], [-1, 0],
+            [1, 1], [-1, -1], [1, -1], [-1, 1]
           ];
         }
 
@@ -809,7 +801,6 @@
         }
       });
 
-      // Isi kotak kosong dengan huruf acak
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
           if (GAME_STATE.grid[r][c] === '') {
@@ -819,9 +810,7 @@
         }
       }
 
-      // Render Grid ke HTML
       renderGridHTML();
-      // Render Target Words ke Panel Samping
       renderTargetWordsHTML();
     }
 
@@ -850,7 +839,6 @@
       }
     }
 
-    // Merender Grid ke Tampilan Web (Lebih Padat)
     function renderGridHTML() {
       const gridElement = document.getElementById('wordGrid');
       gridElement.innerHTML = '';
@@ -859,24 +847,22 @@
       gridElement.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
       const cellBgClass = GAME_STATE.mode === 'TURN_BASE' 
-        ? "bg-neutral-800 text-slate-100 hover:bg-red-900/30 border-neutral-700" 
-        : "bg-white text-slate-800 hover:bg-emerald-50 border-slate-200";
+        ? "bg-neutral-900 text-slate-250 hover:bg-red-950 border-neutral-800/80" 
+        : "bg-slate-900 text-slate-250 hover:bg-emerald-950 border-slate-800/80";
 
-      // Ukuran font menyusut secara dinamis sesuai ukuran grid agar tidak meluber
-      let fontSizeClass = "text-xs sm:text-sm";
-      if (size === 12) fontSizeClass = "text-[11px] sm:text-xs";
+      let fontSizeClass = "text-sm sm:text-base";
+      if (size === 12) fontSizeClass = "text-[12px] sm:text-sm";
       if (size === 15) fontSizeClass = "text-[9px] sm:text-[11px]";
 
       for (let r = 0; r < size; r++) {
         for (let c = 0; c < size; c++) {
           const letter = GAME_STATE.grid[r][c];
           const cell = document.createElement('div');
-          cell.className = `grid-cell aspect-square flex items-center justify-center font-bold ${fontSizeClass} border rounded cursor-pointer ${cellBgClass}`;
+          cell.className = `grid-cell aspect-square flex items-center justify-center font-black ${fontSizeClass} border rounded cursor-pointer ${cellBgClass} mono-font`;
           cell.innerText = letter;
           cell.dataset.row = r;
           cell.dataset.col = c;
 
-          // Event Mouse (Desktop)
           cell.addEventListener('mousedown', (e) => startSelection(r, c));
           cell.addEventListener('mouseenter', (e) => continueSelection(r, c));
           
@@ -884,16 +870,13 @@
         }
       }
 
-      // Event Mouse End (Desktop)
       window.addEventListener('mouseup', endSelection);
 
-      // Event Touch (Mobile)
       gridElement.addEventListener('touchstart', handleTouchStart, { passive: false });
       gridElement.addEventListener('touchmove', handleTouchMove, { passive: false });
       gridElement.addEventListener('touchend', endSelection);
     }
 
-    // Merender Daftar Kata Target di Panel Samping
     function renderTargetWordsHTML() {
       const targetList = document.getElementById('targetWordList');
       targetList.innerHTML = '';
@@ -901,36 +884,32 @@
       GAME_STATE.words.forEach(word => {
         const isFound = GAME_STATE.foundWords.includes(word);
         const badge = document.createElement('span');
+        badge.classList.add('shrink-0');
         
         if (isFound) {
-          // Kata Ditemukan (Selalu Terbuka)
-          badge.className = "px-2 py-1 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 line-through opacity-60 transition-all";
+          badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-emerald-900/30 text-emerald-500 line-through opacity-60 transition-all shrink-0 mono-font";
           badge.innerText = word;
         } else {
-          // Kata Belum Ditemukan
           if (GAME_STATE.showWordList) {
-            // Tunjukkan kosa kata
             if (GAME_STATE.mode === 'TURN_BASE') {
-              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-neutral-800 text-red-400 border border-red-950 transition-all";
+              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-neutral-900 text-red-400 border border-red-950/60 transition-all shrink-0 mono-font";
             } else {
-              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all";
+              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-emerald-400 border border-emerald-950 transition-all shrink-0 mono-font";
             }
             badge.innerText = word;
           } else {
-            // Sembunyikan kata (🔒 Enkripsi Rahasia)
             if (GAME_STATE.mode === 'TURN_BASE') {
-              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-red-950/40 text-red-500 border border-red-900/40 select-none animate-pulse";
+              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-red-950/20 text-red-500 border border-red-900/40 select-none animate-pulse shrink-0 mono-font";
             } else {
-              badge.className = "px-2 py-1 rounded text-[10px] font-black bg-slate-200 text-slate-400 select-none";
+              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-slate-500 border border-slate-800 select-none shrink-0 mono-font";
             }
-            badge.innerText = `🔒 Rahasia (${word.length} Huruf)`;
+            badge.innerText = `🔒 (L:${word.length})`;
           }
         }
         targetList.appendChild(badge);
       });
     }
 
-    // ================= TOUCH & DRAG WORD SELECTION ENGINE =================
     function startSelection(r, c) {
       GAME_STATE.isSelecting = true;
       GAME_STATE.startCell = { r, c };
@@ -970,13 +949,11 @@
       if (!GAME_STATE.isSelecting) return;
       GAME_STATE.isSelecting = false;
 
-      // Ambil susunan huruf
       let selectedWord = "";
       GAME_STATE.selectedCells.forEach(cell => {
         selectedWord += GAME_STATE.grid[cell.r][cell.c];
       });
 
-      // Balik urutan huruf
       const reversedWord = selectedWord.split('').reverse().join('');
 
       let matchedWord = null;
@@ -1026,15 +1003,16 @@
       }
     }
 
+    // Highlighting paths
     function highlightSelection() {
       clearTemporaryHighlight();
       GAME_STATE.selectedCells.forEach(cell => {
         const el = getCellElement(cell.r, cell.c);
         if (el) {
           if (GAME_STATE.mode === 'TURN_BASE') {
-            el.classList.add('bg-red-800/80', 'text-white', 'scale-105');
+            el.classList.add('bg-red-800', 'text-white', 'scale-105');
           } else {
-            el.classList.add('bg-emerald-400/80', 'text-white', 'scale-105');
+            el.classList.add('bg-emerald-600', 'text-white', 'scale-105');
           }
         }
       });
@@ -1047,8 +1025,7 @@
           const el = getCellElement(r, c);
           if (el && !el.classList.contains('found-cell')) {
             el.classList.remove(
-              'bg-emerald-400/80', 'bg-red-800/80', 'text-white', 'scale-105',
-              'bg-emerald-500/30', 'bg-red-900/30'
+              'bg-emerald-600', 'bg-red-800', 'text-white', 'scale-105'
             );
           }
         }
@@ -1061,9 +1038,9 @@
         if (el) {
           el.classList.add('found-cell');
           if (GAME_STATE.mode === 'TURN_BASE') {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-bold border rounded cursor-pointer bg-red-600 text-white border-red-500 found-cell`;
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-650 text-white border-red-550 found-cell mono-font`;
           } else {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-bold border rounded cursor-pointer bg-emerald-500 text-white border-emerald-400 found-cell`;
+            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-650 text-white border-emerald-550 found-cell mono-font`;
           }
         }
       });
@@ -1073,7 +1050,6 @@
       return document.querySelector(`[data-row='${r}'][data-col='${c}']`);
     }
 
-    // ================= TIMER ENGINE =================
     function startTimerEngine() {
       if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
 
@@ -1082,28 +1058,26 @@
 
       if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
         GAME_STATE.timer = 0;
-        timerLabel.innerText = "DURASI MAIN";
-        timerDisplay.innerText = "Santai";
+        timerLabel.innerText = "MODE:";
+        timerDisplay.innerText = GAME_STATE.mode === "TURN_BASE" ? "BATTLE" : "SANTAI";
       } else if (GAME_STATE.mode === "SPEEDRUN") {
         GAME_STATE.timer = 0;
-        timerLabel.innerText = "DURASI JALAN";
+        timerLabel.innerText = "TEMPO:";
         timerDisplay.innerText = "00:00";
         
         GAME_STATE.timerInterval = setInterval(() => {
           GAME_STATE.timer++;
           timerDisplay.innerText = formatTime(GAME_STATE.timer);
         }, 1000);
-
       } else if (GAME_STATE.mode === "TIME_CHALLENGE") {
-        timerLabel.innerText = "SISA WAKTU";
+        timerLabel.innerText = "LIMIT:";
         
-        // Atur range waktu dinamis
         if (GAME_STATE.difficulty === "EASY") {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 30; // 30 - 90 Detik
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 30;
         } else if (GAME_STATE.difficulty === "MEDIUM") {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 120; // 120 - 180 Detik
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 120;
         } else {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 240; // 240 - 300 Detik
+          GAME_STATE.timer = Math.floor(Math.random() * 61) + 240;
         }
 
         timerDisplay.innerText = formatTime(GAME_STATE.timer);
@@ -1114,7 +1088,7 @@
 
           if (GAME_STATE.timer <= 0) {
             clearInterval(GAME_STATE.timerInterval);
-            endGame(false, "Sisa waktu Anda sudah habis! Kota berhasil diambil alih oleh kegelapan.");
+            endGame(false, "Sisa waktu habis! Penjahat melarikan diri.");
           }
         }, 1000);
       }
@@ -1126,24 +1100,30 @@
       return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
     }
 
-    // ================= CO-ORDINATED TURN BASE COMBAT ENGINE =================
     function startCombatEngine() {
       if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
-      GAME_STATE.combatTimer = 15; // Jeda waktu monster memukul kini 15 Detik
+      
+      const cooldownMap = {
+        EASY: 15,
+        MEDIUM: 25,
+        HARD: 40
+      };
+      
+      const monsterCooldown = cooldownMap[GAME_STATE.difficulty] || 15;
+      GAME_STATE.combatTimer = monsterCooldown;
       
       GAME_STATE.turnInterval = setInterval(() => {
         GAME_STATE.combatTimer--;
         
         if (GAME_STATE.combatTimer <= 0) {
           triggerEnemyAttack();
-          GAME_STATE.combatTimer = 15;
+          GAME_STATE.combatTimer = monsterCooldown;
         } else {
-          document.getElementById('combatLog').innerText = `👿 Monster bersiap menghantam dalam ${GAME_STATE.combatTimer} detik!`;
+          document.getElementById('combatLog').innerText = `💥 PENJAHAT READY IN ${GAME_STATE.combatTimer}S`;
         }
       }, 1000);
     }
 
-    // Serangan Monster (Hero berguncang dan tersulut efek merah hancur)
     function triggerEnemyAttack() {
       AudioGame.playEnemyHit();
       GAME_STATE.playerHp = Math.max(0, GAME_STATE.playerHp - 10);
@@ -1153,34 +1133,30 @@
       const heroSpriteContainer = document.getElementById('heroSpriteContainer');
       const enemySpriteContainer = document.getElementById('enemySpriteContainer');
 
-      // Jalankan animasi menerjang musuh
       enemySpriteContainer.classList.remove('sprite-idle');
       enemySpriteContainer.classList.add('enemy-attack-anim');
 
       setTimeout(() => {
-        // Hero menerima hantaman keras
         heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
         arena.classList.add('shake-anim');
         createDamageFloatEffect(heroSpriteContainer, "-10 HP", "text-red-500");
-      }, 300);
+      }, 250);
 
       setTimeout(() => {
-        // Kembalikan ke sedia kala
         enemySpriteContainer.classList.remove('enemy-attack-anim');
         enemySpriteContainer.classList.add('sprite-idle');
         heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
         arena.classList.remove('shake-anim');
-      }, 700);
+      }, 600);
 
-      document.getElementById('combatLog').innerText = "💥 Monster kota meluncurkan ledakan keras! Kamu kehilangan 10 HP!";
+      document.getElementById('combatLog').innerText = "💥 PENJAHAT MEMUKUL: -10 HP";
 
       if (GAME_STATE.playerHp <= 0) {
         stopCombatEngine();
-        endGame(false, "Pertahananmu runtuh! Kamu kalah dalam pertempuran apokaliptik.");
+        endGame(false, "Penjahat berhasil menjatuhkan Anda!");
       }
     }
 
-    // Serangan Hero (Hero bergerak menerjang musuh ke arah kanan)
     function triggerPlayerAttack() {
       AudioGame.playHit();
       GAME_STATE.enemyHp = Math.max(0, GAME_STATE.enemyHp - 5);
@@ -1190,40 +1166,37 @@
       const enemySpriteContainer = document.getElementById('enemySpriteContainer');
       const sword = document.getElementById('heroSwordG');
 
-      // Gerakan menerjang hero
       heroSpriteContainer.classList.remove('sprite-idle');
       heroSpriteContainer.classList.add('hero-attack-anim');
       sword.style.transform = "rotate(75deg)";
 
       setTimeout(() => {
-        // Monster terkena hantaman pedang hero
         enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
-        createDamageFloatEffect(enemySpriteContainer, "-5 HP", "text-amber-400");
-      }, 300);
+        createDamageFloatEffect(enemySpriteContainer, "-5 HP", "text-emerald-400");
+      }, 250);
 
       setTimeout(() => {
-        // Selesai aksi, kembalikan ke idle
         heroSpriteContainer.classList.remove('hero-attack-anim');
         heroSpriteContainer.classList.add('sprite-idle');
         sword.style.transform = "rotate(0deg)";
         enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
-      }, 750);
+      }, 600);
 
-      document.getElementById('combatLog').innerText = "⚔️ Tebasan maut mendarat mulus! Monster kota terluka 5 HP!";
+      document.getElementById('combatLog').innerText = "⚔️ HERO STRIKE: -5 HP";
 
       if (GAME_STATE.enemyHp <= 0) {
         stopCombatEngine();
         AudioGame.playVictory();
-        endGame(true, "Luar biasa! Monster legendaris pembuat hancur berhasil kamu taklukkan!");
+        endGame(true, "Luar biasa! Penjahat berhasil dilumpuhkan!");
       }
     }
 
     function updateHpBars() {
       document.getElementById('playerHpBar').style.width = `${GAME_STATE.playerHp}%`;
-      document.getElementById('playerHpText').innerText = `${GAME_STATE.playerHp} / 100 HP`;
+      document.getElementById('playerHpText').innerText = `${GAME_STATE.playerHp} HP`;
 
       document.getElementById('enemyHpBar').style.width = `${GAME_STATE.enemyHp}%`;
-      document.getElementById('enemyHpText').innerText = `${GAME_STATE.enemyHp} / 100 HP`;
+      document.getElementById('enemyHpText').innerText = `${GAME_STATE.enemyHp} HP`;
     }
 
     function createDamageFloatEffect(targetElement, text, colorClass) {
@@ -1232,21 +1205,20 @@
       const parentRect = container.getBoundingClientRect();
 
       const el = document.createElement('div');
-      el.className = `absolute font-black text-[15px] retro-font ${colorClass} damage-text z-50`;
+      el.className = `absolute font-black text-[10px] retro-font ${colorClass} damage-text z-50`;
       el.innerText = text;
 
-      el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 15}px`;
+      el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 10}px`;
       el.style.top = `${rect.top - parentRect.top}px`;
 
       container.appendChild(el);
-      setTimeout(() => el.remove(), 1000);
+      setTimeout(() => el.remove(), 800);
     }
 
     function stopCombatEngine() {
       if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
     }
 
-    // ================= EVENTS HANDLER =================
     function handleSuccessEvent(word) {
       let points = 10;
       if (GAME_STATE.difficulty === 'MEDIUM') points = 15;
@@ -1262,14 +1234,14 @@
 
     function handleBoardClear() {
       if (GAME_STATE.mode === 'TURN_BASE') {
-        document.getElementById('combatLog').innerText = "🌟 Papan Tercuri Bersih! Merestrukturisasi Papan Baru...";
+        document.getElementById('combatLog').innerText = "🌟 RE-CONSTRUCTING AREA...";
         setTimeout(() => {
           GAME_STATE.foundWords = [];
           GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
           buildGridBoard();
-        }, 1000);
+        }, 800);
       } else {
-        endGame(true, "Hebat! Semua kata rahasia perkotaan berhasil kamu sikat habis!");
+        endGame(true, "Hebat! Semua kata rahasia berhasil dipecahkan!");
       }
     }
 
@@ -1279,7 +1251,6 @@
       buildGridBoard();
     }
 
-    // ================= END GAME STATE =================
     function endGame(isVictory, message) {
       if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
       stopCombatEngine();
@@ -1291,23 +1262,20 @@
       const timeEl = document.getElementById('resultTime');
       const emoji = document.getElementById('resultEmoji');
 
-      title.innerText = isVictory ? "HEBAT! KAMU MENANG!" : "GAME OVER!";
+      title.innerText = isVictory ? "MISSION ACCOMPLISHED" : "OPERATION FAILED";
       text.innerText = message;
       scoreEl.innerText = GAME_STATE.score;
-      emoji.innerText = isVictory ? "🏆" : "☠️";
+      emoji.innerText = isVictory ? "🏆" : "💀";
 
       if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
-        timeEl.innerText = "Santai";
+        timeEl.innerText = "FREE";
       } else {
         timeEl.innerText = formatTime(GAME_STATE.timer);
       }
 
-      // Kirim hasil ke server google skrip / simpan lokal
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler((response) => {
-            console.log("Leaderboard tersinkronisasi.");
-          })
+          .withSuccessHandler(() => console.log("Cloud synced."))
           .saveHighScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
       } else {
         saveLocalScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
@@ -1317,7 +1285,7 @@
     }
 
     function surrenderGame() {
-      endGame(false, "Anda memilih untuk menyerah dan meninggalkan peperangan.");
+      endGame(false, "Meninggalkan area operasi.");
     }
 
     function restartToMenu() {
@@ -1328,12 +1296,10 @@
     }
 
     function setupAestheticsNormalMenu() {
-      document.body.className = "bg-slate-50 text-slate-800 min-h-screen flex flex-col transition-colors duration-500";
-      document.getElementById('mainHeader').className = "bg-emerald-600 text-white shadow-md p-4 transition-colors duration-500";
-      document.getElementById('mainFooter').className = "bg-slate-800 text-slate-400 text-center py-6 text-sm mt-8 border-t border-slate-700 transition-colors duration-500";
+      document.body.className = "bg-slate-900 text-slate-100 h-screen w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500";
+      document.getElementById('mainHeader').className = "bg-slate-950 text-emerald-400 px-4 py-1.5 border-b border-emerald-950 shrink-0";
     }
 
-    // ================= LOCAL LEADERBOARD FALLBACK =================
     function saveLocalScore(name, score, mode, diff) {
       let scores = localStorage.getItem('localLeaderboard');
       scores = scores ? JSON.parse(scores) : [];
@@ -1349,7 +1315,7 @@
 
       if (modal.classList.contains('hidden')) {
         modal.classList.remove('hidden');
-        content.innerHTML = '<div class="text-center text-slate-500 py-6">Menghubungkan ke pusat server...</div>';
+        content.innerHTML = '<div class="text-center text-slate-500 py-3 mono-font">CONNECTING SECURE NETWORK...</div>';
 
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
@@ -1369,25 +1335,25 @@
       content.innerHTML = '';
 
       if (!scores || scores.length === 0) {
-        content.innerHTML = '<div class="text-center text-slate-500 py-6">Belum ada rekor tercatat. Jadilah yang pertama!</div>';
+        content.innerHTML = '<div class="text-center text-slate-500 py-3 mono-font">NO RECORD REGISTERED.</div>';
         return;
       }
 
       scores.forEach((entry, idx) => {
         const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}.`));
         const row = document.createElement('div');
-        row.className = "flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 hover:bg-slate-100 transition";
+        row.className = "flex justify-between items-center bg-slate-900/60 p-2 rounded border border-emerald-950 hover:bg-slate-900 transition";
         row.innerHTML = `
-          <div class="flex items-center space-x-3">
-            <span class="font-extrabold text-base">${medal}</span>
+          <div class="flex items-center space-x-2">
+            <span class="font-black text-[11px] text-emerald-500">${medal}</span>
             <div>
-              <div class="font-bold text-slate-800">${entry.nama}</div>
-              <div class="text-[10px] text-slate-400 uppercase tracking-widest">${entry.mode} • ${entry.difficulty}</div>
+              <div class="font-black text-slate-200 text-[10px] mono-font">${entry.nama}</div>
+              <div class="text-[7px] text-slate-500 uppercase tracking-widest mono-font">${entry.mode} • ${entry.difficulty}</div>
             </div>
           </div>
           <div class="text-right">
-            <div class="font-black text-emerald-600 text-base">${entry.score} pts</div>
-            <div class="text-[9px] text-slate-400">${entry.tanggal}</div>
+            <div class="font-black text-emerald-400 text-[11px] mono-font">${entry.score} PTS</div>
+            <div class="text-[7px] text-slate-500 mono-font">${entry.tanggal}</div>
           </div>
         `;
         content.appendChild(row);
