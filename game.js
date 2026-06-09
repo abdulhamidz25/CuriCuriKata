@@ -384,12 +384,20 @@ function handleTouchMove(e) {
 
 function highlightSelection() {
   clearTemporaryHighlight();
+  const size = GAME_STATE.gridSize;
+
+  // Kunci ukuran font agar presisi dan tidak berubah saat disentuh
+  let fontSizeClass = "text-sm sm:text-base";
+  if (size === 10) fontSizeClass = "text-[13px] sm:text-sm";
+  if (size === 12) fontSizeClass = "text-[11px] sm:text-[12px]";
+
   GAME_STATE.selectedCells.forEach(cell => {
     const el = getCellElement(cell.r, cell.c);
     if (el) {
+      // PEMBERSIHAN TOTAL: Hapus 'scale-105', pertahankan ketebalan agar font TIDAK MEMBESAR/BOLD mendadak
       el.className = (GAME_STATE.mode === 'TURN_BASE')
-        ? `grid-cell aspect-square flex items-center justify-center font-black text-white bg-red-700 border-red-500 scale-105 mono-font`
-        : `grid-cell aspect-square flex items-center justify-center font-black text-white bg-emerald-600 border-emerald-400 scale-105 mono-font`;
+        ? `grid-cell aspect-square flex items-center justify-center font-black ${fontSizeClass} border rounded cursor-pointer text-white bg-red-700 border-red-500 mono-font`
+        : `grid-cell aspect-square flex items-center justify-center font-black ${fontSizeClass} border rounded cursor-pointer text-white bg-emerald-600 border-emerald-400 mono-font`;
     }
   });
 }
