@@ -19,21 +19,15 @@
       font-family: 'Share Tech Mono', monospace;
     }
 
-    /* Double retro-border for true arcade feel */
-    .arcade-border {
-      border: 4px solid #1e293b;
-      box-shadow: 0px 0px 0px 4px #10b981, 0px 0px 15px rgba(16,185,129,0.3);
-    }
-    .dark .arcade-border {
-      border: 4px solid #0f172a;
-      box-shadow: 0px 0px 0px 4px #059669, 0px 0px 25px rgba(5,150,105,0.4);
-    }
-
-    /* Word board locks */
+    /* Word board locks agar tidak stretch dan tetap square presisi */
     #wordGrid {
       touch-action: none; 
       user-select: none;
       -webkit-user-select: none;
+      display: grid;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1 / 1; /* Mengunci rasio agar selalu kotak sempurna */
     }
     .grid-cell {
       user-select: none;
@@ -103,7 +97,6 @@
       animation: floatUp 0.9s forwards cubic-bezier(0.075, 0.82, 0.165, 1);
     }
 
-    /* Dramatic Lightning - Rapid double flashes every 3.5 seconds */
     @keyframes lightningFlash {
       0%, 85%, 89%, 93%, 100% { opacity: 0; }
       86%, 88% { opacity: 0.8; background-color: rgba(224, 242, 254, 0.95); }
@@ -113,7 +106,6 @@
       animation: lightningFlash 3.5s infinite;
     }
 
-    /* Apocalypse Skyline Background */
     .bg-apocalypse {
       background: linear-gradient(180deg, #05050a 0%, #100a12 50%, #030305 100%);
       position: relative;
@@ -121,155 +113,14 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe select-none">
+<body class="bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between pb-safe pt-safe select-none">
 
-  <div class="fixed top-3 right-4 z-50 flex items-center space-x-2">
-    <button onclick="toggleTheme()" class="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-emerald-800 p-2 rounded-xl text-slate-700 dark:text-emerald-400 hover:scale-105 active:scale-95 transition-all shadow-md">
-      <svg id="themeSunIcon" class="w-4.5 h-4.5 hidden" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 11-2 0V3a1 1 0 011-1zm4 2.243a1 1 0 01.015 1.4 L13.6 6.057a1 1 0 11-1.414-1.414l1.414-1.414A1 1 0 0114 4.243zM16.757 8a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1zm-2.757 4.757a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414l-1.414-1.414a1 1 0 010-1.414zM10 16.757a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm-4.757-2.757a1 1 0 010 1.414l-1.414 1.414a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zM3.243 8a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1zM6.057 4.243a1 1 0 011.414 0l1.414 1.414a1 1 0 11-1.414 1.414L6.057 5.657a1 1 0 010-1.414zM10 6a4 4 0 100 8 4 4 0 000-8z" />
-      </svg>
-      <svg id="themeMoonIcon" class="w-4.5 h-4.5" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-      </svg>
-    </button>
-  </div>
-
-  <script>
-    const AudioGame = {
-      ctx: null,
-      init() {
-        if (!this.ctx) {
-          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-      },
-      playSelect() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.08);
-      },
-      playSuccess() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
-        osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
-        osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
-        osc.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.24);
-        gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.35);
-      },
-      playFail() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.2);
-      },
-      playHit() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.18);
-      },
-      playEnemyHit() {
-        this.init();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
-      },
-      playVictory() {
-        this.init();
-        const now = this.ctx.currentTime;
-        const playNote = (freq, start, duration) => {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + start);
-          gain.gain.setValueAtTime(0.04, now + start);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + start + duration);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start(now + start);
-          osc.stop(now + start + duration);
-        };
-        playNote(261.63, 0, 0.1);
-        playNote(329.63, 0.1, 0.1);
-        playNote(392.00, 0.2, 0.1);
-        playNote(523.25, 0.3, 0.1);
-        playNote(659.25, 0.4, 0.1);
-        playNote(1046.50, 0.5, 0.4);
-      }
-    };
-  </script>
-
-  <script>
-    const DICTIONARY_RAW = [
-      "BACA", "TULIS", "MAKAN", "MINUM", "TIDUR", "MANDI", "JALAN", "LARI", "LOMPAT", "TERBANG", "BERENANG", "DUDUK", "BERDIRI", "MELIHAT", "MENDENGAR", "MEMASAK", "MENCOCI", "MENULIS", "MEMBACA", "MENYANYI", "MENARI", "BERMAIN", "BELAJAR", "BEKERJA", "BELANJA", "MEMBELI", "MENJUAL", "MEMBAWA", "MELEMPAR", "MENANGKAP", "MENENDANG", "MEMUKUL", "MENARIK", "MENDORONG", "MEMBUKA", "MENUTUP", "MEMILIH", "MENGGILING", "MEMOTONG", "MEMBELAH", "MENGIKAT", "MENANAM", "MEMANEN", "MENYIRAM", "MEMUPUK", "MENYAPU", "MENGGEPEL", "MENJEMUR", "MENYETRIKA", "MELIPAT", "MELETAKKAN", "MEMINDAH", "MENGGULUNG", "MENAHAN", "MENCOBA", "BERHASIL", "GAGAL", "MENANG", "KALAH", "MEJA", "KURSI", "LEMARI", "KASUR", "BANTAL", "GULING", "SELIMUT", "KELAMBU", "CERMIN", "JENDELA", "PINTU", "ATAP", "DINDING", "LANTAI", "PAGAR", "LAMPU", "KIPAS", "RADIO", "TELEVISI", "TELEPON", "LAPTOP", "KOMPUTER", "KAMERA", "JAMER", "KULKAS", "KOMPOR", "PANCI", "WAJAN", "PIRING", "GELAS", "MANGKUK", "SENDOK", "GARPU", "PISAU", "TALENAN", "TEKO", "EMBER", "GAYUNG", "HANDUK", "SABUN", "SHAMPOO", "SIKAT", "PASTA", "SISIR", "BAJU", "CELANA", "ROK", "JAKET", "KEMEJA", "KAOS", "TOPI", "SEPATU", "SANDAL", "KAOSKAKI", "SARUNGTANGAN", "DASI", "SABUK", "TAS", "DOMPET", "PAYUNG", "KACAMATA", "JAMTANGAN", "KALUNG", "CINCIN", "GELANG", "ANTING", "BUKU", "PENSIL", "PULPEN", "PENGHAPUS", "PENGGARIS", "SPIDOL", "KERTAS", "AMPLOP", "MATERAI", "GUNTING", "STAPLER", "LAKBAN", "JEPITAN", "KEMOCENG", "TIMBA", "SELANG", "KUNCI", "GEMBOK", "OBENG", "TANG", "PALU", "PAKU", "GERGAJI", "BOR", "TANGGA", "SEMEN", "BATA", "PASIR", "BATU", "KAYU", "BESI", "BAJA", "PLASTIK", "KARET", "KACA", "KAIN", "BENANG", "JARUM", "KANCING", "RESLETING", "MAP", "KALENDER", "NOTA", "KARTU", "UANG", "KOIN", "KOPER", "RANSEL", "SAKU", "JAKARTA", "BANDUNG", "SURABAYA", "MEDAN", "SEMARANG", "MAKASSAR", "PALEMBANG", "DENPASAR", "YOGYAKARTA", "SOLO", "MALANG", "BOGOR", "BEKASI", "DEPOK", "TANGERANG", "SERANG", "CILEGON", "SUKABUMI", "CIANJUR", "PURWAKARTA", "CIREBON", "GARUT", "TASIKMALAYA", "CIAMIS", "BANJAR", "MAJALENGKA", "SUMEDANG", "SUBANG", "KARAWANG", "INDRAMAYU", "BREBES", "TEGAL", "PEMALANG", "PEKALONGAN", "BATANG", "KENDAL", "DEMAK", "KUDUS", "PATI", "REMBANG", "BLORA", "GROBOGAN", "SRAGEN", "BOYOLALI", "KLATEN", "SUKOHARJO", "WONOGIRI", "KARANGANYAR", "KEBUMEN", "PURWOREJO", "CILACAP", "BANYUMAS", "PURBALINGGA", "BANJARNEGARA", "WONOSOBO", "TEMANGGUNG", "MAGELANG", "SALATIGA", "AMBARAWA", "UNGARAN", "NGAWI", "MAGETAN", "MADIUN", "PONOROGO", "PACITAN", "TRENGGALEK", "TULUNGAGUNG", "BLITAR", "KEDIRI", "NGANJUK", "JOMBANG", "MOJOKERTO", "SIDOARJO", "GRESIK", "LAMONGAN", "TUBAN", "BOJONEGORO", "PASURUAN", "PROBOLINGGO", "LUMAJANG", "JEMBER", "BONDOWOSO", "SITUBONDO", "BANYUWANGI", "BANGKALAN", "SAMPANG", "PAMEKASAN", "SUMENEP", "SINGARAJA", "GIANYAR", "TABANAN", "KLUNGKUNG", "KARANGASEM", "NEGARA", "BANGLI", "MATARAM", "BIMA", "KUPANG", "ENDE", "MAUMERE", "PONTIANAK", "SINGKAWANG", "SAMBAS", "SANGGAU", "SINTANG", "KETAPANG", "BANJARMASIN", "BANJARBARU", "MARTAPURA", "RANTAU", "KANDANGAN", "BARABAI", "AMUNTAI", "TANJUNG", "PELAIHARI", "MARABAHAN", "BATULICIN", "KOTABARU", "SAMARINDA", "BALIKPAPAN", "BONTANG", "TARAKAN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MANADO", "BITUNG", "TOMOHON", "GORONTALO", "PALU", "POSO", "KENDARI", "BAUBAU", "TOKYO", "SEOUL", "BEIJING", "BANGKOK", "MANILA", "LONDON", "PARIS", "BERLIN", "ROMA", "MADRID", "MOSKOW", "KAIRO", "SYDNEY", "NEWYORK", "DUBAI", "SOEKARNO", "HATTA", "HABIBIE", "JOKOWI", "PRABOWO", "GIBRAN", "KARTINI", "SUDIRMAN", "DIPONEGORO", "GAJAHMADA", "JAYABAYA", "HAYAMWURUK", "RAFFI", "NAGITA", "BAIM", "PAULA", "DEDDY", "CORBUZIER", "SULE", "ANDRE", "TAULANY", "VINCENT", "DESTA", "TULUS", "RAISA", "ISYANA", "AFGAN", "ROSSA", "JUDIKA", "ARILASSO", "ONCE", "IWANFALS", "CHRISYE", "AGNEZMO", "ANANG", "ASHANTY", "AUREL", "ATTA", "THARIQ", "FUJI", "FADIL", "JAIDI", "RADITYA", "DIKA", "ERNEST", "PRAKASA", "PANDJI", "BABE", "CABITA", "MARSHAL", "JEFRI", "NICHOL", "REZA", "RAHADIAN", "VINO", "BASTIAN", "IQBAAL", "RAMADHAN", "ANGGA", "YUNANDA", "SYIFA", "HADJU", "PRILLY", "LAUDYA", "BELLA", "DIAN", "SASTRO", "NICHOLAS", "SAPUTRA", "LUNA", "MAYA", "GADING", "MARTEN", "GISEL", "GEMPI", "CIPUNG", "RAYYANZA", "RAFATHAR", "ARHAN", "ASNAWI", "ERNANDO", "HUBNER", "STRUICK", "IVAN", "GUNAWAN", "RUBEN", "ONSU", "SARWENDAH", "BETRAND", "PETO", "DENNY", "CAGUR", "SUMARGO", "UNTUNG", "ARIE", "KRITING", "INDAH", "PERMATASARI", "GEPAMUNGKAS", "BENU", "MARLO", "MARCO", "JOVI", "LOPEZ", "ANDOVI", "SKINNY", "CHANDRA", "LIOW", "JEROME", "POLIN", "JESS", "LIMIT", "SISCA", "KOHL", "ALSHAD", "AHMAD", "TIARA", "ANDINI", "LYODRA", "GINTING", "ZIVA", "MAGNOLYA", "KEISYA", "LEVRONKA", "MAHALINI", "RIZKY", "FEBIAN", "PUTRI", "DELINA", "RIZWAN", "FERDI", "AZIZAH", "SALSHA", "DEVANO", "DANENDRA", "IIS", "DAHLIA", "KING", "NASSAR", "SOIMAH", "INUL", "DARATISTA", "DEWI", "PERSSIK", "LESTI", "KEJORA", "RIZKY", "BILLAR", "FILDAN", "KRESEK", "SENTER", "LILIN", "KOREK", "CELENGAN", "MACOTA", "SYAL", "MASKER", "HELM", "PARFUM", "BEDAK", "LIPSTIK", "BLENDER", "MIXER", "OVEN", "TABUNG", "SERBET", "TISSUE", "MOUSE", "KEYBOARD", "LAYAR", "LENSA", "TRIPOD", "HAPE", "CASAN", "BATERAI", "KABEL", "SAKLAR", "SPEAKER", "GITAR", "PIANO", "DRUM", "BIOLA", "SULING", "PIANIKA", "RELA", "JANGKA", "STAMPEL", "TINTA", "LEM", "KAPAS", "KAPUR", "CAT", "KUAS", "SEPAKBOLA", "RAKET", "KOK", "GAWANG", "JARING", "MATRAS", "TRUK", "BUS", "PERAHU", "ROKET", "STASIUN", "JEMBATAN", "TROTOAR", "HALTE", "RAMBU", "MELUKIS", "MENGGAMBAR", "BERBICARA", "TERTAWA", "MENANGIS", "TERSENYUM", "BERPIKIR", "BERANGKAT", "PULANG", "DATANG", "PERGI", "MASUK", "KELUAR", "NAIK", "TURUN", "BERHENTI", "LANJUT", "SETUJU", "INGAT", "LUPA", "TAHU", "FAHAM", "MENGERTI", "BERDOA", "IBADAH", "SHOLAT", "SEDEKAH", "PUASA", "MEMELUK", "CIUM", "JABAT", "SALAM", "TEGUR", "SAPA", "PANGGIL", "BISIK", "TERIAK", "SORAK", "ADU", "TANDING", "DEBAT", "DISKUSI", "NGOBROL", "CERITA", "DONGENG", "KISAH", "CATAT", "CETAK", "COPY", "KETIK", "PASTE", "CORET", "WARNAI", "TEMPEL", "RAKIT", "BONGKAR", "PASANG", "STEL", "UKUR", "TIMBANG", "HITUNG", "JUMLAH", "BAGI", "KALI", "KURANG", "TAMBAH", "SORTIR", "AMBON", "JAYAPURA", "SORONG", "MERAUKE", "LAMPUNG", "BENGKULU", "JAMBI", "PADANG", "ACEH", "RIAU", "BATAM", "BANGKA", "BELITUNG", "SHANGHAI", "SINGAPURA", "KUALALUMPUR", "AMSTERDAM", "RIYADH", "MEKKAH", "MADINAH", "ISTANBUL", "ANKARA", "WASHINGTON", "LOSANGELES", "CHICAGO", "TORONTO", "RIO", "BUENOSAIRES", "MUMBAI", "DELHI", "DHAKA", "KARACHI", "BAGHDAD", "TEHRAN", "ATENA", "LIMA", "JUSTIN", "BIEBER", "JUNGKOOK", "JIMIN", "V", "SUGA", "JHOPE", "JIN", "RM", "BLACKPINK", "LISA", "JENNIE", "JISOO", "ROSE", "CRISTIANO", "RONALDO", "LIONEL", "MESSI", "NEYMAR", "MBAPPE", "HAALAND", "SALAH", "ROONEY", "BECKHAM", "ZIDANE", "MARADONA", "PELE", "JORDAN", "LEBRON", "KOBE", "CURRY", "ELON", "MUSK", "MARK", "ZUCKERBERG", "BILL", "GATES", "STEVE", "JOBS", "ALBERT", "EINSTEIN", "NEWTON", "GALILEO", "TESLA", "EDISON", "ARISTOTELES", "PLATO", "SOCRATES", "SHAKESPEARE", "MOZART", "BEETHOVEN", "CHOPIN", "PICASSO", "VINCI", "COLUMBUS", "MANGKUBUMI", "THAMRIN", "ATTA", "HALILINTAR", "GIAS", "GIBRAN"
-    ];
-
-    const KATA_MASTER = { EASY: [], MEDIUM: [], HARD: [] };
-    
-    DICTIONARY_RAW.forEach(item => {
-      const cleanWord = item.replace(/[^A-Za-z]/g, '').toUpperCase();
-      if (cleanWord.length >= 3) {
-        if (cleanWord.length <= 5) {
-          KATA_MASTER.EASY.push(cleanWord);
-        } else if (cleanWord.length <= 8) {
-          KATA_MASTER.MEDIUM.push(cleanWord);
-        } else {
-          KATA_MASTER.HARD.push(cleanWord);
-        }
-      }
-    });
-
-    if (KATA_MASTER.EASY.length === 0) KATA_MASTER.EASY = ["BACA", "MEJA", "BUKU"];
-    if (KATA_MASTER.MEDIUM.length === 0) KATA_MASTER.MEDIUM = ["JAKARTA", "BANDUNG", "LEMARI"];
-    if (KATA_MASTER.HARD.length === 0) KATA_MASTER.HARD = ["KEMERDEKAAN", "KOMPUTER", "TELEVISI"];
-  </script>
-
-  <header id="mainHeader" class="bg-white dark:bg-slate-950 text-slate-800 dark:text-white px-4 py-2 border-b border-slate-200 dark:border-emerald-950 shrink-0">
+  <header id="mainHeader" class="bg-white text-slate-800 px-4 py-2 border-b border-slate-200 shrink-0">
     <div class="max-w-4xl mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2">
-        <span class="text-xs uppercase font-black tracking-widest text-emerald-600 dark:text-emerald-400 mono-font">CURI KATA // COIN-OP v3.5</span>
+        <span class="text-xs uppercase font-black tracking-widest text-emerald-600 mono-font">CURI KATA // COIN-OP v3.5</span>
       </div>
-      <button onclick="toggleLeaderboardModal()" class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] px-3 py-1 rounded-lg font-black transition mono-font">
+      <button onclick="toggleLeaderboardModal()" class="bg-emerald-50 border border-emerald-200 text-emerald-600 text-[10px] px-3 py-1 rounded-lg font-black transition mono-font">
         🏆 LEADERBOARD
       </button>
     </div>
@@ -277,43 +128,42 @@
 
   <main class="flex-grow flex flex-col justify-center items-center p-3 overflow-hidden relative w-full max-w-4xl mx-auto">
     
-    <div id="menuScene" class="w-full max-w-2xl bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl shadow-2xl overflow-hidden flex flex-col justify-between max-h-full transition-all duration-300 p-1">
+    <div id="menuScene" class="w-full max-w-2xl bg-white border-4 border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col justify-between max-h-full transition-all duration-300 p-1">
       
-      <div class="p-4 text-center shrink-0 border-b-4 border-slate-800 dark:border-emerald-900 bg-slate-50 dark:bg-slate-900 flex flex-col items-center">
-        <img src="image_3e561e.jpg" alt="Logo Curi-Curi Kata" class="w-full max-w-[280px] h-auto object-contain drop-shadow-md rounded-xl" onerror="this.style.display='none'; document.getElementById('backupLogoText').style.display='block';">
-        <h1 id="backupLogoText" class="hidden text-3xl md:text-4xl font-black uppercase tracking-wider game-logo text-emerald-600 dark:text-emerald-400">Curi-Curi Kata</h1>
-        <p class="text-emerald-700 dark:text-emerald-500/80 text-[10px] uppercase tracking-widest font-black mt-2 mono-font">Arcade Lexical Tactical Warfare</p>
+      <div class="p-4 text-center shrink-0 border-b-4 border-slate-800 bg-slate-50 flex flex-col items-center">
+        <h1 class="text-3xl md:text-4xl font-black uppercase tracking-wider text-emerald-600">Curi-Curi Kata</h1>
+        <p class="text-emerald-700 text-[10px] uppercase tracking-widest font-black mt-2 mono-font">Arcade Lexical Tactical Warfare</p>
       </div>
 
       <div class="p-6 md:p-8 space-y-6 overflow-y-auto no-scrollbar text-sm">
         <div>
-          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-1.5 text-xs uppercase tracking-wider mono-font">Codename Agen Pemain:</label>
-          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-900 border-2 border-slate-300 dark:border-emerald-800 focus:border-emerald-500 dark:focus:border-emerald-400 focus:outline-none font-bold text-slate-800 dark:text-emerald-300">
+          <label class="block text-emerald-600 font-black mb-1.5 text-xs uppercase tracking-wider mono-font">Codename Agen Pemain:</label>
+          <input type="text" id="playerNameInput" value="Pemain Baru" class="w-full px-4 py-3 rounded-xl bg-slate-100 border-2 border-slate-300 focus:border-emerald-500 focus:outline-none font-bold text-slate-800">
         </div>
 
-        <div class="bg-slate-100 dark:bg-slate-900 p-4 rounded-xl border-2 border-slate-300 dark:border-emerald-950 flex items-center justify-between shadow-sm">
+        <div class="bg-slate-100 p-4 rounded-xl border-2 border-slate-300 flex items-center justify-between shadow-sm">
           <div>
-            <label class="block text-slate-950 dark:text-slate-200 font-black text-sm md:text-base tracking-tight">Tampilkan Daftar Kata Target</label>
-            <span class="text-xs text-slate-600 dark:text-slate-400 font-medium" id="hintVisibilityText">Aktif: Target kata ditampilkan jelas.</span>
+            <label class="block text-slate-950 font-black text-sm md:text-base tracking-tight">Tampilkan Daftar Kata Target</label>
+            <span class="text-xs text-slate-600 font-medium" id="hintVisibilityText">Aktif: Target kata ditampilkan jelas.</span>
           </div>
           <label class="relative inline-flex items-center cursor-pointer select-none ml-4 shrink-0">
             <input type="checkbox" id="showWordToggle" checked class="sr-only peer" onchange="toggleOptionText()">
-            <div class="w-14 h-7 bg-slate-400 dark:bg-slate-800 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-emerald-500 after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white dark:after:bg-emerald-400 after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-200 dark:peer-checked:bg-emerald-950 border-2 border-slate-500 dark:border-emerald-800 shadow-inner"></div>
+            <div class="w-14 h-7 bg-slate-400 rounded-full peer peer-focus:ring-2 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-emerald-500 after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-200 border-2 border-slate-500 shadow-inner"></div>
           </label>
         </div>
 
         <div>
-          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Kesulitan Operasi:</label>
+          <label class="block text-emerald-600 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Kesulitan Operasi:</label>
           <div class="grid grid-cols-3 gap-3">
-            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400">
+            <button onclick="selectDifficulty('EASY')" id="btnDiffEASY" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 border-emerald-500 text-emerald-600">
               <span class="text-xs md:text-sm">EASY</span>
               <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 8x8</span>
             </button>
-            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50">
+            <button onclick="selectDifficulty('MEDIUM')" id="btnDiffMEDIUM" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 border-slate-300 text-slate-600 hover:border-emerald-500/50">
               <span class="text-xs md:text-sm">MEDIUM</span>
               <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 12x12</span>
             </button>
-            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50">
+            <button onclick="selectDifficulty('HARD')" id="btnDiffHARD" class="difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 border-slate-300 text-slate-600 hover:border-emerald-500/50">
               <span class="text-xs md:text-sm">HARD</span>
               <span class="text-[9px] md:text-xs font-normal opacity-75 mono-font">Grid 15x15</span>
             </button>
@@ -321,45 +171,45 @@
         </div>
 
         <div>
-          <label class="block text-emerald-600 dark:text-emerald-400 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Mode Pertempuran:</label>
+          <label class="block text-emerald-600 font-black mb-2 text-xs uppercase tracking-wider mono-font">Pilih Mode Pertempuran:</label>
           <div class="grid grid-cols-2 gap-3">
-            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-slate-700 dark:text-slate-200">
+            <button onclick="selectMode('CASUAL')" id="btnModeCASUAL" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 border-emerald-500 text-slate-700">
               <span class="text-xl">☕</span>
               <div>
                 <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">CASUAL</div>
-                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Tanpa batasan waktu.</div>
+                <div class="text-[9px] md:text-xs text-slate-500 leading-none mono-font">Tanpa batasan waktu.</div>
               </div>
             </button>
 
-            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+            <button onclick="selectMode('SPEEDRUN')" id="btnModeSPEEDRUN" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 border-slate-300 hover:border-emerald-500/50 text-slate-700">
               <span class="text-lg">⚡</span>
               <div>
                 <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">SPEEDRUN</div>
-                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Selesaikan secepat mungkin!</div>
+                <div class="text-[9px] md:text-xs text-slate-500 leading-none mono-font">Selesaikan secepat mungkin!</div>
               </div>
             </button>
 
-            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+            <button onclick="selectMode('TIME_CHALLENGE')" id="btnModeTIME_CHALLENGE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 border-slate-300 hover:border-emerald-500/50 text-slate-700">
               <span class="text-lg">⏱️</span>
               <div>
                 <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">TIME LIMIT</div>
-                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Pacu sisa waktu.</div>
+                <div class="text-[9px] md:text-xs text-slate-500 leading-none mono-font">Pacu sisa waktu.</div>
               </div>
             </button>
 
-            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200">
+            <button onclick="selectMode('TURN_BASE')" id="btnModeTURN_BASE" class="mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 border-slate-300 hover:border-emerald-500/50 text-slate-700">
               <span class="text-lg">⚔️</span>
               <div>
                 <div class="font-bold text-[11px] md:text-xs leading-tight logo-font">RPG BATTLE</div>
-                <div class="text-[9px] md:text-xs text-slate-500 dark:text-slate-400 leading-none mono-font">Lawan Penjahat taktis!</div>
+                <div class="text-[9px] md:text-xs text-slate-500 leading-none mono-font">Lawan Penjahat taktis!</div>
               </div>
             </button>
           </div>
         </div>
       </div>
 
-      <div class="p-5 bg-slate-50 dark:bg-slate-900/80 border-t-2 border-slate-200 dark:border-emerald-950 shrink-0">
-        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 font-black py-3 rounded-xl text-sm transition duration-150 shadow-md flex items-center justify-center space-x-2 active:scale-95 logo-font">
+      <div class="p-5 bg-slate-50 border-t-2 border-slate-200 shrink-0">
+        <button onclick="startGame()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm transition duration-150 shadow-md flex items-center justify-center space-x-2 active:scale-95 logo-font">
           <span>MASUK ARENA</span>
           <span>🚀</span>
         </button>
@@ -369,7 +219,6 @@
     <div id="gameplayScene" class="hidden w-full h-full flex flex-col gap-2 items-stretch justify-center overflow-hidden">
       
       <div id="battleArena" class="hidden w-full rounded-2xl bg-apocalypse p-1 border-2 border-red-950 overflow-hidden relative shrink-0 h-32 shadow-inner">
-        
         <div class="absolute inset-0 lightning-layer pointer-events-none z-10"></div>
         <div id="damageOverlay" class="absolute inset-0 pointer-events-none z-30"></div>
 
@@ -382,36 +231,7 @@
         <div class="grid grid-cols-2 gap-1 relative z-20 h-full items-center px-4">
           <div class="flex flex-col items-center justify-center h-full">
             <span class="text-[7px] retro-font text-emerald-400 mb-1">HERO</span>
-            
-            <div id="heroSpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all">
-              <svg id="heroSprite" class="w-full h-full" viewBox="0 0 100 140">
-                <rect x="30" y="118" width="18" height="12" fill="#3b2314" rx="2" />
-                <rect x="52" y="118" width="18" height="12" fill="#3b2314" rx="2" />
-                <rect x="34" y="94" width="12" height="26" fill="#1e3a8a" />
-                <rect x="54" y="94" width="12" height="26" fill="#1e3a8a" />
-                <rect x="28" y="90" width="44" height="6" fill="#78350f" rx="1" />
-                <rect x="46" y="88" width="8" height="10" fill="#f59e0b" rx="1" />
-                <rect x="26" y="54" width="48" height="38" fill="#047857" rx="6" />
-                <rect x="22" y="52" width="12" height="10" fill="#64748b" rx="2" />
-                <path d="M 22 36 L 10 40 L 18 46 Z" fill="#10b981" />
-                <rect x="44" y="48" width="12" height="8" fill="#fbcfe8" />
-                <circle cx="50" cy="36" r="16" fill="#fbcfe8" />
-                <path d="M 34 32 Q 34 22 46 22 L 46 36 Z" fill="#451a03" />
-                <path d="M 66 32 Q 66 22 54 22 L 54 36 Z" fill="#451a03" />
-                <rect x="40" y="32" width="5" height="5" fill="#000000" />
-                <rect x="55" y="32" width="5" height="5" fill="#000000" />
-                <path d="M 46 45 Q 50 49 54 45" stroke="#000000" stroke-width="2.5" fill="none" />
-                <rect x="34" y="24" width="32" height="6" fill="#10b981" />
-                <circle cx="50" cy="27" r="2.5" fill="#ffffff" />
-                <g id="heroSwordG" class="origin-bottom-left" style="transform-origin: 75px 86px;">
-                  <circle cx="75" cy="80" r="7.5" fill="#1f2937" />
-                  <rect x="71" y="66" width="8" height="14" fill="#64748b" />
-                  <rect x="63" y="62" width="24" height="5" fill="#f59e0b" rx="1" />
-                  <path d="M 70 62 L 70 12 L 75 4 L 80 12 L 80 62 Z" fill="#cbd5e1" stroke="#38bdf8" stroke-width="2" />
-                </g>
-              </svg>
-            </div>
-            
+            <div id="heroSpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all"></div>
             <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1.5 overflow-hidden border border-neutral-700 mt-1">
               <div id="playerHpBar" class="bg-emerald-500 h-full w-full transition-all duration-200"></div>
             </div>
@@ -420,36 +240,7 @@
 
           <div class="flex flex-col items-center justify-center h-full">
             <span class="text-[7px] retro-font text-red-500 mb-1">PENJAHAT</span>
-            
-            <div id="enemySpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all">
-              <svg id="enemySprite" class="w-full h-full" viewBox="0 0 100 140">
-                <rect x="30" y="118" width="18" height="12" fill="#0f172a" rx="2" />
-                <rect x="52" y="118" width="18" height="12" fill="#0f172a" rx="2" />
-                <rect x="34" y="94" width="12" height="26" fill="#4b5563" />
-                <rect x="54" y="94" width="12" height="26" fill="#4b5563" />
-                <rect x="36" y="100" width="6" height="6" fill="#1f2937" />
-                <rect x="56" y="106" width="6" height="6" fill="#111827" />
-                <rect x="28" y="90" width="44" height="6" fill="#374151" />
-                <rect x="26" y="54" width="48" height="38" fill="#1e293b" rx="6" />
-                <rect x="34" y="60" width="32" height="22" fill="#7f1d1d" rx="2" />
-                <rect x="38" y="64" width="6" height="12" fill="#f59e0b" />
-                <rect x="47" y="64" width="6" height="12" fill="#f59e0b" />
-                <rect x="56" y="64" width="6" height="12" fill="#f59e0b" />
-                <rect x="44" y="48" width="12" height="8" fill="#0f172a" />
-                <circle cx="50" cy="36" r="16" fill="#0f172a" />
-                <rect x="36" y="28" width="28" height="8" fill="#dc2626" rx="2" />
-                <circle cx="43" cy="32" r="3.5" fill="#facc15" />
-                <circle cx="57" cy="32" r="3.5" fill="#facc15" />
-                <circle cx="20" cy="80" r="7.5" fill="#111827" />
-                <rect x="8" y="70" width="8" height="18" fill="#b91c1c" rx="1" />
-                <line x1="12" y1="70" x2="12" y2="64" stroke="#f59e0b" stroke-width="2" />
-                <g id="enemyWeaponG">
-                  <circle cx="80" cy="80" r="7.5" fill="#111827" />
-                  <path d="M 78 92 L 84 46 Q 87 35 96 39 L 91 48" stroke="#dc2626" stroke-width="5" stroke-linecap="round" fill="none" />
-                </g>
-              </svg>
-            </div>
-            
+            <div id="enemySpriteContainer" class="sprite-idle relative w-12 h-18 flex items-center justify-center transition-all"></div>
             <div class="w-full max-w-[70px] bg-neutral-800 rounded-full h-1.5 overflow-hidden border border-neutral-700 mt-1">
               <div id="enemyHpBar" class="bg-red-600 h-full w-full transition-all duration-200"></div>
             </div>
@@ -462,922 +253,89 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-950 border-2 border-slate-800 dark:border-emerald-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0" id="scorePanel">
-        
+      <div class="bg-white border-2 border-slate-300 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0" id="scorePanel">
         <div class="flex items-center space-x-3 shrink-0 justify-between md:justify-start">
           <div class="leading-none">
-            <span class="text-[8px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest block mono-font">CODENAME AGENT</span>
-            <span class="text-xs font-black text-emerald-600 dark:text-emerald-300 uppercase tracking-tight" id="gamePlayerName">Pemain</span>
+            <span class="text-[8px] text-slate-500 uppercase font-black tracking-widest block mono-font">CODENAME AGENT</span>
+            <span class="text-xs font-black text-emerald-600 uppercase tracking-tight" id="gamePlayerName">Pemain</span>
           </div>
-          <span class="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font" id="badgeDifficulty">
+          <span class="bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font" id="badgeDifficulty">
             EASY
           </span>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 text-xs shrink-0 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200 dark:border-emerald-950">
+        <div class="grid grid-cols-2 gap-2 text-xs shrink-0 bg-slate-100 p-2 rounded-xl border border-slate-200">
           <div class="flex items-center space-x-1.5">
             <span class="text-[9px] text-slate-500 font-bold uppercase mono-font">SCORE:</span>
-            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 mono-font" id="currentScore">0</span>
+            <span class="text-xs font-black text-emerald-600 mono-font" id="currentScore">0</span>
           </div>
-          <div class="flex items-center space-x-1.5 border-l border-slate-300 dark:border-emerald-950 pl-2">
+          <div class="flex items-center space-x-1.5 border-l border-slate-300 pl-2">
             <span class="text-[9px] text-slate-500 font-bold uppercase id-label mono-font" id="timerLabel">TIME:</span>
-            <span class="text-xs font-black text-slate-800 dark:text-slate-200 mono-font" id="gameTimer">00:00</span>
+            <span class="text-xs font-black text-slate-800 mono-font" id="gameTimer">00:00</span>
           </div>
         </div>
 
         <div class="flex-grow min-w-0 flex items-center gap-2">
           <div class="text-[8px] text-slate-500 uppercase tracking-widest font-black leading-none shrink-0 hidden lg:block mono-font">WORDS:</div>
-          <div id="targetWordList" class="flex-grow flex flex-row overflow-x-auto whitespace-nowrap gap-1.5 px-2 py-1.5 no-scrollbar select-none bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-emerald-950/40">
-            </div>
+          <div id="targetWordList" class="flex-grow flex flex-row overflow-x-auto whitespace-nowrap gap-1.5 px-2 py-1.5 no-scrollbar select-none bg-slate-50 rounded-xl border border-slate-200"></div>
         </div>
 
         <div class="flex space-x-1.5 shrink-0 justify-end mt-1 md:mt-0">
-          <button onclick="surrenderGame()" class="py-1 px-2.5 rounded-lg bg-red-100 dark:bg-red-950/30 border border-red-200 dark:border-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/30 text-red-600 dark:text-red-500 font-black text-[9px] uppercase tracking-wide mono-font transition">
+          <button onclick="surrenderGame()" class="py-1 px-2.5 rounded-lg bg-red-100 border border-red-200 hover:bg-red-200 text-red-600 font-black text-[9px] uppercase tracking-wide mono-font transition">
             🏳️ QUIT
           </button>
-          <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-1 px-2.5 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-black text-[9px] uppercase tracking-wide mono-font transition">
+          <button onclick="regenerateBoardBtn()" id="btnRegen" class="py-1 px-2.5 rounded-lg bg-emerald-100 border border-emerald-200 hover:bg-emerald-200 text-emerald-600 font-black text-[9px] uppercase tracking-wide mono-font transition">
             🔄 RESET
           </button>
         </div>
       </div>
 
       <div class="flex-grow flex flex-col justify-center items-center w-full overflow-hidden p-1.5">
-        <div class="bg-white dark:bg-slate-950 rounded-3xl p-3 border-4 border-slate-800 dark:border-emerald-950 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center shadow-2xl transition-all duration-300" id="gridBoardContainer">
-          <div id="wordGrid" class="grid w-full h-full gap-[2.5px] p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl cursor-pointer select-none">
-            </div>
+        <div class="bg-white rounded-3xl p-3 border-4 border-slate-800 select-none w-full max-w-[min(90vw,60dvh)] max-h-[min(90vw,60dvh)] aspect-square flex items-center justify-center shadow-2xl transition-all duration-300" id="gridBoardContainer">
+          <div id="wordGrid" class="bg-slate-100 rounded-2xl p-1 cursor-pointer select-none"></div>
         </div>
       </div>
 
     </div>
-
   </main>
 
   <div id="leaderboardModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl max-w-sm w-full p-5 shadow-2xl text-xs">
-      <div class="flex justify-between items-center border-b-2 border-slate-200 dark:border-emerald-900 pb-3 mb-3">
-        <h3 class="text-xs font-black text-slate-800 dark:text-emerald-400 uppercase tracking-widest flex items-center logo-font">
-          🏆 TOP COIN-OP AGENTS
-        </h3>
-        <button onclick="toggleLeaderboardModal()" class="text-slate-500 dark:text-emerald-500 hover:text-emerald-300 text-lg font-bold">&times;</button>
+    <div class="bg-white border-4 border-slate-800 rounded-3xl max-w-sm w-full p-5 shadow-2xl text-xs">
+      <div class="flex justify-between items-center border-b-2 border-slate-200 pb-3 mb-3">
+        <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center logo-font">🏆 TOP COIN-OP AGENTS</h3>
+        <button onclick="toggleLeaderboardModal()" class="text-slate-500 hover:text-emerald-600 text-lg font-bold">&times;</button>
       </div>
-      
-      <div class="space-y-2 max-h-[220px] overflow-y-auto no-scrollbar animate-pulse" id="leaderboardContent">
-        <div class="text-center text-slate-500 py-4 mono-font">CONNECTING SECURE NETWORK...</div>
-      </div>
-
-      <div class="mt-4 pt-3 border-t-2 border-slate-200 dark:border-emerald-900">
-        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 py-2.5 rounded-xl font-black transition logo-font text-[10px]">
-          CLOSE REPORT
-        </button>
+      <div class="space-y-2 max-h-[220px] overflow-y-auto no-scrollbar" id="leaderboardContent"></div>
+      <div class="mt-4 pt-3 border-t-2 border-slate-200">
+        <button onclick="toggleLeaderboardModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black transition logo-font text-[10px]">CLOSE REPORT</button>
       </div>
     </div>
   </div>
 
   <div id="resultModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white dark:bg-slate-950 border-4 border-slate-800 dark:border-emerald-500 rounded-3xl max-w-xs w-full p-6 shadow-2xl text-center text-xs">
+    <div class="bg-white border-4 border-slate-800 rounded-3xl max-w-xs w-full p-6 shadow-2xl text-center text-xs">
       <div id="resultEmoji" class="text-4xl mb-2">🎉</div>
-      <h3 id="resultTitle" class="text-lg font-black text-slate-800 dark:text-emerald-400 uppercase mb-2 logo-font">GAME END</h3>
-      <p id="resultText" class="text-slate-500 dark:text-slate-400 mb-4 text-[11px]">Detail operasi kata rahasia selesai.</p>
-
-      <div class="bg-slate-50 dark:bg-slate-900 rounded-xl p-3.5 mb-5 border-2 border-slate-200 dark:border-emerald-950">
+      <h3 id="resultTitle" class="text-lg font-black text-slate-800 uppercase mb-2 logo-font">GAME END</h3>
+      <p id="resultText" class="text-slate-500 mb-4 text-[11px]">Detail operasi kata rahasia selesai.</p>
+      <div class="bg-slate-50 rounded-xl p-3.5 mb-5 border-2 border-slate-200">
         <div class="grid grid-cols-2 gap-2">
           <div>
             <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL POINTS</span>
-            <span id="resultScore" class="text-lg font-black text-emerald-600 dark:text-emerald-400 mono-font">0</span>
+            <span id="resultScore" class="text-lg font-black text-emerald-600 mono-font">0</span>
           </div>
           <div>
             <span class="block text-[8px] text-slate-500 font-bold uppercase mono-font">TOTAL DURATION</span>
-            <span id="resultTime" class="text-lg font-black text-slate-800 dark:text-slate-200 mono-font">00:00</span>
+            <span id="resultTime" class="text-lg font-black text-slate-800 mono-font">00:00</span>
           </div>
         </div>
       </div>
-
-      <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white dark:text-slate-950 py-2.5 rounded-xl font-black transition logo-font text-[10px]">
-        MAIN MENU
-      </button>
+      <button onclick="restartToMenu()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black transition logo-font text-[10px]">MAIN MENU</button>
     </div>
   </div>
 
-  <script>
-    // State Game Utama
-    let GAME_STATE = {
-      playerName: "Pemain Baru",
-      difficulty: "EASY", 
-      mode: "CASUAL", 
-      gridSize: 8,
-      words: [],
-      foundWords: [],
-      grid: [],
-      timer: 0,
-      timerInterval: null,
-      score: 0,
-      showWordList: true,
-      
-      playerHp: 100,
-      enemyHp: 100,
-      turnInterval: null,
-      combatTimer: 0,
-
-      isSelecting: false,
-      startCell: null,
-      selectedCells: []
-    };
-
-    // Global Theme State: defaults to dark mode
-    let isDarkMode = true;
-
-    function initTheme() {
-      const stored = localStorage.getItem('themePreference');
-      if (stored === 'light') {
-        isDarkMode = false;
-      } else {
-        isDarkMode = true;
-      }
-      applyThemeStyles();
-    }
-
-    function toggleTheme() {
-      isDarkMode = !isDarkMode;
-      localStorage.setItem('themePreference', isDarkMode ? 'dark' : 'light');
-      applyThemeStyles();
-      AudioGame.playSelect();
-    }
-
-    function applyThemeStyles() {
-      const htmlEl = document.documentElement;
-      const sunIcon = document.getElementById('themeSunIcon');
-      const moonIcon = document.getElementById('themeMoonIcon');
-
-      if (isDarkMode) {
-        htmlEl.classList.add('dark');
-        sunIcon.classList.remove('hidden');
-        moonIcon.classList.add('hidden');
-      } else {
-        htmlEl.classList.remove('dark');
-        sunIcon.classList.add('hidden');
-        moonIcon.classList.remove('hidden');
-      }
-
-      // Re-apply styles if currently in gameplay scene to instantly update look
-      if (!document.getElementById('gameplayScene').classList.contains('hidden')) {
-        setupAesthetics();
-        renderGridHTML();
-        renderTargetWordsHTML();
-      }
-    }
-
-    // Call theme initializer immediately
-    initTheme();
-
-    function toggleOptionText() {
-      const toggle = document.getElementById('showWordToggle');
-      const text = document.getElementById('hintVisibilityText');
-      if (toggle.checked) {
-        text.innerText = "Aktif: Target kata ditampilkan jelas.";
-      } else {
-        text.innerText = "Non-Aktif: Cari secara mandiri.";
-      }
-      AudioGame.playSelect();
-    }
-
-    function selectDifficulty(diff) {
-      GAME_STATE.difficulty = diff;
-      document.querySelectorAll('.difficulty-btn').forEach(btn => {
-        btn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50";
-      });
-      const selectedBtn = document.getElementById(`btnDiff${diff}`);
-      selectedBtn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400";
-      AudioGame.playSelect();
-    }
-
-    function selectMode(mode) {
-      GAME_STATE.mode = mode;
-      
-      const logo = document.getElementById('menuLogo');
-      if (mode === 'TURN_BASE') {
-        logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo-red text-red-600 animate-pulse";
-      } else {
-        logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo text-emerald-600 dark:text-emerald-400";
-      }
-
-      document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200";
-      });
-      const selectedBtn = document.getElementById(`btnMode${mode}`);
-      selectedBtn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-slate-700 dark:text-slate-200";
-      AudioGame.playSelect();
-    }
-
-    function getRandomWords(difficulty) {
-      const pool = KATA_MASTER[difficulty];
-      const count = difficulty === 'EASY' ? 5 : (difficulty === 'MEDIUM' ? 8 : 10);
-      const shuffled = [...pool].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, count);
-    }
-
-    function startGame() {
-      AudioGame.init();
-      const inputName = document.getElementById('playerNameInput').value.trim();
-      GAME_STATE.playerName = inputName ? inputName : "Pencuri Kata";
-      GAME_STATE.showWordList = document.getElementById('showWordToggle').checked;
-      
-      if (GAME_STATE.difficulty === "EASY") GAME_STATE.gridSize = 8;
-      else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.gridSize = 12;
-      else GAME_STATE.gridSize = 15;
-
-      GAME_STATE.score = 0;
-      GAME_STATE.foundWords = [];
-      GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
-
-      setupAesthetics();
-      buildGridBoard();
-      startTimerEngine();
-
-      document.getElementById('menuScene').classList.add('hidden');
-      document.getElementById('gameplayScene').classList.remove('hidden');
-      
-      document.getElementById('gamePlayerName').innerText = GAME_STATE.playerName;
-      document.getElementById('badgeDifficulty').innerText = GAME_STATE.difficulty;
-      document.getElementById('currentScore').innerText = GAME_STATE.score;
-    }
-
-    function setupAesthetics() {
-      const header = document.getElementById('mainHeader');
-      const scorePanel = document.getElementById('scorePanel');
-      const container = document.getElementById('gridBoardContainer');
-      const arena = document.getElementById('battleArena');
-
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        // Apocalyptic battle style for TURN_BASE RPG
-        document.body.className = "bg-neutral-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-        header.className = "bg-slate-950 text-red-500 px-4 py-2 border-b border-red-950 shrink-0";
-        scorePanel.className = "bg-neutral-950 border-2 border-red-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
-        container.className = "bg-neutral-950 rounded-3xl p-3 border-4 border-red-950 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
-        
-        document.getElementById('gamePlayerName').className = "text-xs font-black text-red-500 uppercase tracking-tight";
-        document.getElementById('badgeDifficulty').className = "bg-red-950 border border-red-900/40 text-red-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-        
-        arena.classList.remove('hidden');
-
-        GAME_STATE.playerHp = 100;
-        GAME_STATE.enemyHp = 100;
-        updateHpBars();
-        document.getElementById('combatLog').innerText = "💀 NETRALISIR PENJAHAT SEGERA!";
-        
-        startCombatEngine();
-      } else {
-        // Normal game aesthetics depend on light/dark mode state
-        if (isDarkMode) {
-          document.body.className = "bg-slate-900 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-          header.className = "bg-slate-950 text-emerald-400 px-4 py-2 border-b border-emerald-950 shrink-0";
-          scorePanel.className = "bg-slate-950 border-2 border-emerald-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
-          container.className = "bg-slate-950 rounded-3xl p-3 border-4 border-emerald-950/60 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
-
-          document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-300 uppercase tracking-tight";
-          document.getElementById('badgeDifficulty').className = "bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-        } else {
-          document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-          header.className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
-          scorePanel.className = "bg-white border-2 border-slate-300 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-800";
-          container.className = "bg-white rounded-3xl p-3 border-4 border-slate-800 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center shadow-lg";
-
-          document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-600 uppercase tracking-tight";
-          document.getElementById('badgeDifficulty').className = "bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-        }
-
-        arena.classList.add('hidden');
-        stopCombatEngine();
-      }
-    }
-
-    function buildGridBoard() {
-      const size = GAME_STATE.gridSize;
-      GAME_STATE.grid = Array(size).fill(null).map(() => Array(size).fill(''));
-
-      GAME_STATE.words.forEach(word => {
-        let placed = false;
-        let attempts = 0;
-        const maxAttempts = 150;
-
-        let directions = [];
-        if (GAME_STATE.difficulty === "EASY") {
-          directions = [[0, 1], [1, 0]];
-        } else if (GAME_STATE.difficulty === "MEDIUM") {
-          directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
-        } else {
-          directions = [
-            [0, 1], [1, 0], [0, -1], [-1, 0],
-            [1, 1], [-1, -1], [1, -1], [-1, 1]
-          ];
-        }
-
-        while (!placed && attempts < maxAttempts) {
-          const dir = directions[Math.floor(Math.random() * directions.length)];
-          const r = Math.floor(Math.random() * size);
-          const c = Math.floor(Math.random() * size);
-
-          if (canPlaceWord(word, r, c, dir)) {
-            placeWord(word, r, c, dir);
-            placed = true;
-          }
-          attempts++;
-        }
-      });
-
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          if (GAME_STATE.grid[r][c] === '') {
-            const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            GAME_STATE.grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
-          }
-        }
-      }
-
-      renderGridHTML();
-      renderTargetWordsHTML();
-    }
-
-    function canPlaceWord(word, row, col, dir) {
-      const size = GAME_STATE.gridSize;
-      const dr = dir[0];
-      const dc = dir[1];
-
-      for (let i = 0; i < word.length; i++) {
-        const nr = row + i * dr;
-        const nc = col + i * dc;
-
-        if (nr < 0 || nr >= size || nc < 0 || nc >= size) return false;
-        if (GAME_STATE.grid[nr][nc] !== '' && GAME_STATE.grid[nr][nc] !== word[i]) return false;
-      }
-      return true;
-    }
-
-    function placeWord(word, row, col, dir) {
-      const dr = dir[0];
-      const dc = dir[1];
-      for (let i = 0; i < word.length; i++) {
-        const nr = row + i * dr;
-        const nc = col + i * dc;
-        GAME_STATE.grid[nr][nc] = word[i];
-      }
-    }
-
-    function renderGridHTML() {
-      const gridElement = document.getElementById('wordGrid');
-      gridElement.innerHTML = '';
-      
-      const size = GAME_STATE.gridSize;
-      gridElement.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
-
-      // Absolute Contrast styling setup to fix invisible characters bug completely!
-      let cellBgClass = "";
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        cellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
-      } else {
-        cellBgClass = isDarkMode 
-          ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
-          : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950"; // Pure light contrast lock
-      }
-
-      let fontSizeClass = "text-sm sm:text-base";
-      if (size === 12) fontSizeClass = "text-[12px] sm:text-sm";
-      if (size === 15) fontSizeClass = "text-[9px] sm:text-[11px]";
-
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          const letter = GAME_STATE.grid[r][c];
-          const cell = document.createElement('div');
-          cell.className = `grid-cell aspect-square flex items-center justify-center font-black ${fontSizeClass} border rounded cursor-pointer ${cellBgClass} mono-font`;
-          cell.innerText = letter;
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-
-          cell.addEventListener('mousedown', (e) => startSelection(r, c));
-          cell.addEventListener('mouseenter', (e) => continueSelection(r, c));
-          
-          gridElement.appendChild(cell);
-        }
-      }
-
-      window.addEventListener('mouseup', endSelection);
-
-      gridElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-      gridElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-      gridElement.addEventListener('touchend', endSelection);
-    }
-
-    function renderTargetWordsHTML() {
-      const targetList = document.getElementById('targetWordList');
-      targetList.innerHTML = '';
-
-      GAME_STATE.words.forEach(word => {
-        const isFound = GAME_STATE.foundWords.includes(word);
-        const badge = document.createElement('span');
-        badge.classList.add('shrink-0');
-        
-        if (isFound) {
-          badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-emerald-900/30 text-emerald-500 line-through opacity-60 transition-all shrink-0 mono-font";
-          badge.innerText = word;
-        } else {
-          if (GAME_STATE.showWordList) {
-            if (GAME_STATE.mode === 'TURN_BASE') {
-              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-neutral-900 text-red-400 border border-red-950/60 transition-all shrink-0 mono-font";
-            } else {
-              badge.className = isDarkMode
-                ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-emerald-400 border border-emerald-950 transition-all shrink-0 mono-font"
-                : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-emerald-600 border border-emerald-200 transition-all shrink-0 mono-font";
-            }
-            badge.innerText = word;
-          } else {
-            if (GAME_STATE.mode === 'TURN_BASE') {
-              badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-red-950/20 text-red-500 border border-red-900/40 select-none animate-pulse shrink-0 mono-font";
-            } else {
-              badge.className = isDarkMode
-                ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-slate-500 border border-slate-800 select-none shrink-0 mono-font"
-                : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-400 border border-slate-200 select-none shrink-0 mono-font";
-            }
-            badge.innerText = `🔒 (L:${word.length})`;
-          }
-        }
-        targetList.appendChild(badge);
-      });
-    }
-
-    function startSelection(r, c) {
-      GAME_STATE.isSelecting = true;
-      GAME_STATE.startCell = { r, c };
-      GAME_STATE.selectedCells = [{ r, c }];
-      highlightSelection();
-      AudioGame.playSelect();
-    }
-
-    function continueSelection(r, c) {
-      if (!GAME_STATE.isSelecting) return;
-      
-      const start = GAME_STATE.startCell;
-      const dr = r - start.r;
-      const dc = c - start.c;
-
-      const absR = Math.abs(dr);
-      const absC = Math.abs(dc);
-
-      if (dr === 0 || dc === 0 || absR === absC) {
-        const stepR = dr === 0 ? 0 : dr / absR;
-        const stepC = dc === 0 ? 0 : dc / absC;
-        const steps = Math.max(absR, absC);
-        
-        const path = [];
-        for (let i = 0; i <= steps; i++) {
-          path.push({
-            r: start.r + i * stepR,
-            c: start.c + i * stepC
-          });
-        }
-        GAME_STATE.selectedCells = path;
-        highlightSelection();
-      }
-    }
-
-    function endSelection() {
-      if (!GAME_STATE.isSelecting) return;
-      GAME_STATE.isSelecting = false;
-
-      let selectedWord = "";
-      GAME_STATE.selectedCells.forEach(cell => {
-        selectedWord += GAME_STATE.grid[cell.r][cell.c];
-      });
-
-      const reversedWord = selectedWord.split('').reverse().join('');
-
-      let matchedWord = null;
-      if (GAME_STATE.words.includes(selectedWord) && !GAME_STATE.foundWords.includes(selectedWord)) {
-        matchedWord = selectedWord;
-      } else if (GAME_STATE.words.includes(reversedWord) && !GAME_STATE.foundWords.includes(reversedWord)) {
-        matchedWord = reversedWord;
-      }
-
-      if (matchedWord) {
-        GAME_STATE.foundWords.push(matchedWord);
-        AudioGame.playSuccess();
-        
-        markCellsAsFound(GAME_STATE.selectedCells);
-        renderTargetWordsHTML();
-        handleSuccessEvent(matchedWord);
-
-        if (GAME_STATE.foundWords.length === GAME_STATE.words.length) {
-          handleBoardClear();
-        }
-      } else {
-        AudioGame.playFail();
-        clearTemporaryHighlight();
-      }
-    }
-
-    function handleTouchStart(e) {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (element) {
-        let cell = element;
-        while (cell && !cell.dataset.row && cell.id !== 'wordGrid') {
-          cell = cell.parentElement;
-        }
-        if (cell && cell.dataset.row) {
-          const r = parseInt(cell.dataset.row);
-          const c = parseInt(cell.dataset.col);
-          startSelection(r, c);
-        }
-      }
-    }
-
-    function handleTouchMove(e) {
-      e.preventDefault();
-      if (!GAME_STATE.isSelecting) return;
-      const touch = e.touches[0];
-      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (element) {
-        let cell = element;
-        while (cell && !cell.dataset.row && cell.id !== 'wordGrid') {
-          cell = cell.parentElement;
-        }
-        if (cell && cell.dataset.row) {
-          const r = parseInt(cell.dataset.row);
-          const c = parseInt(cell.dataset.col);
-          continueSelection(r, c);
-        }
-      }
-    }
-
-    // MEMPERBAIKI BUG UTAMA: Menghilangkan kelas 'found-cell' dari sorotan sementara agar fungsi pembersih bekerja!
-    function highlightSelection() {
-      clearTemporaryHighlight();
-      GAME_STATE.selectedCells.forEach(cell => {
-        const el = getCellElement(cell.r, cell.c);
-        if (el) {
-          if (GAME_STATE.mode === 'TURN_BASE') {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-red-700 border-red-500 scale-105 mono-font`;
-          } else {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-emerald-600 border-emerald-400 scale-105 mono-font`;
-          }
-        }
-      });
-    }
-
-    function clearTemporaryHighlight() {
-      const size = GAME_STATE.gridSize;
-      
-      let baseCellBgClass = "";
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        baseCellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
-      } else {
-        baseCellBgClass = isDarkMode 
-          ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
-          : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
-      }
-
-      for (let r = 0; r < size; r++) {
-        for (let c = 0; c < size; c++) {
-          const el = getCellElement(r, c);
-          if (el && !el.classList.contains('found-cell')) {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer ${baseCellBgClass} mono-font`;
-          }
-        }
-      }
-    }
-
-    function markCellsAsFound(cells) {
-      cells.forEach(cell => {
-        const el = getCellElement(cell.r, cell.c);
-        if (el) {
-          el.classList.add('found-cell');
-          if (GAME_STATE.mode === 'TURN_BASE') {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-600 text-white border-red-400 found-cell mono-font`;
-          } else {
-            el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-600 text-white border-emerald-400 found-cell mono-font`;
-          }
-        }
-      });
-    }
-
-    function getCellElement(r, c) {
-      return document.querySelector(`[data-row='${r}'][data-col='${c}']`);
-    }
-
-    function startTimerEngine() {
-      if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
-
-      const timerDisplay = document.getElementById('gameTimer');
-      const timerLabel = document.getElementById('timerLabel');
-
-      if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
-        GAME_STATE.timer = 0;
-        timerLabel.innerText = "MODE:";
-        timerDisplay.innerText = GAME_STATE.mode === "TURN_BASE" ? "BATTLE" : "SANTAI";
-      } else if (GAME_STATE.mode === "SPEEDRUN") {
-        GAME_STATE.timer = 0;
-        timerLabel.innerText = "TEMPO:";
-        timerDisplay.innerText = "00:00";
-        
-        GAME_STATE.timerInterval = setInterval(() => {
-          GAME_STATE.timer++;
-          timerDisplay.innerText = formatTime(GAME_STATE.timer);
-        }, 1000);
-      } else if (GAME_STATE.mode === "TIME_CHALLENGE") {
-        timerLabel.innerText = "LIMIT:";
-        
-        if (GAME_STATE.difficulty === "EASY") {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 30;
-        } else if (GAME_STATE.difficulty === "MEDIUM") {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 120;
-        } else {
-          GAME_STATE.timer = Math.floor(Math.random() * 61) + 240;
-        }
-
-        timerDisplay.innerText = formatTime(GAME_STATE.timer);
-
-        GAME_STATE.timerInterval = setInterval(() => {
-          GAME_STATE.timer--;
-          timerDisplay.innerText = formatTime(GAME_STATE.timer);
-
-          if (GAME_STATE.timer <= 0) {
-            clearInterval(GAME_STATE.timerInterval);
-            endGame(false, "Sisa waktu habis! Penjahat berhasil lolos dari radar.");
-          }
-        }, 1000);
-      }
-    }
-
-    function formatTime(seconds) {
-      const min = Math.floor(seconds / 60);
-      const sec = seconds % 60;
-      return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-    }
-
-    function startCombatEngine() {
-      if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
-      
-      const cooldownMap = {
-        EASY: 15,
-        MEDIUM: 25,
-        HARD: 40
-      };
-      
-      const monsterCooldown = cooldownMap[GAME_STATE.difficulty] || 15;
-      GAME_STATE.combatTimer = monsterCooldown;
-      
-      GAME_STATE.turnInterval = setInterval(() => {
-        GAME_STATE.combatTimer--;
-        
-        if (GAME_STATE.combatTimer <= 0) {
-          triggerEnemyAttack();
-          GAME_STATE.combatTimer = monsterCooldown;
-        } else {
-          document.getElementById('combatLog').innerText = `💥 PENJAHAT MENYERANG DALAM ${GAME_STATE.combatTimer}S`;
-        }
-      }, 1000);
-    }
-
-    function triggerEnemyAttack() {
-      AudioGame.playEnemyHit();
-      GAME_STATE.playerHp = Math.max(0, GAME_STATE.playerHp - 10);
-      updateHpBars();
-
-      const arena = document.getElementById('battleArena');
-      const heroSpriteContainer = document.getElementById('heroSpriteContainer');
-      const enemySpriteContainer = document.getElementById('enemySpriteContainer');
-
-      enemySpriteContainer.classList.remove('sprite-idle');
-      enemySpriteContainer.classList.add('enemy-attack-anim');
-
-      setTimeout(() => {
-        heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
-        arena.classList.add('shake-anim');
-        createDamageFloatEffect(heroSpriteContainer, "-10 HP", "text-red-500");
-      }, 200);
-
-      setTimeout(() => {
-        enemySpriteContainer.classList.remove('enemy-attack-anim');
-        enemySpriteContainer.classList.add('sprite-idle');
-        heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
-        arena.classList.remove('shake-anim');
-      }, 550);
-
-      document.getElementById('combatLog').innerText = "💥 PENJAHAT MEMUKUL: -10 HP";
-
-      if (GAME_STATE.playerHp <= 0) {
-        stopCombatEngine();
-        endGame(false, "Penjahat melumpuhkan pertahanan Anda!");
-      }
-    }
-
-    function triggerPlayerAttack() {
-      AudioGame.playHit();
-      GAME_STATE.enemyHp = Math.max(0, GAME_STATE.enemyHp - 10);
-      updateHpBars();
-
-      const heroSpriteContainer = document.getElementById('heroSpriteContainer');
-      const enemySpriteContainer = document.getElementById('enemySpriteContainer');
-      const sword = document.getElementById('heroSwordG');
-
-      heroSpriteContainer.classList.remove('sprite-idle');
-      heroSpriteContainer.classList.add('hero-attack-anim');
-      sword.style.transform = "rotate(75deg)";
-
-      setTimeout(() => {
-        enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
-        createDamageFloatEffect(enemySpriteContainer, "-10 HP", "text-emerald-400");
-      }, 200);
-
-      setTimeout(() => {
-        heroSpriteContainer.classList.remove('hero-attack-anim');
-        heroSpriteContainer.classList.add('sprite-idle');
-        sword.style.transform = "rotate(0deg)";
-        enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
-      }, 550);
-
-      document.getElementById('combatLog').innerText = "⚔️ HERO STRIKE: -10 HP";
-
-      if (GAME_STATE.enemyHp <= 0) {
-        stopCombatEngine();
-        AudioGame.playVictory();
-        endGame(true, "Misi Selesai! Penjahat berhasil ditangkap.");
-      }
-    }
-
-    function updateHpBars() {
-      document.getElementById('playerHpBar').style.width = `${GAME_STATE.playerHp}%`;
-      document.getElementById('playerHpText').innerText = `${GAME_STATE.playerHp} HP`;
-
-      document.getElementById('enemyHpBar').style.width = `${GAME_STATE.enemyHp}%`;
-      document.getElementById('enemyHpText').innerText = `${GAME_STATE.enemyHp} HP`;
-    }
-
-    function createDamageFloatEffect(targetElement, text, colorClass) {
-      const container = document.getElementById('damageOverlay');
-      const rect = targetElement.getBoundingClientRect();
-      const parentRect = container.getBoundingClientRect();
-
-      const el = document.createElement('div');
-      el.className = `absolute font-black text-xs retro-font ${colorClass} damage-text z-50`;
-      el.innerText = text;
-
-      el.style.left = `${rect.left - parentRect.left + rect.width / 2 - 10}px`;
-      el.style.top = `${rect.top - parentRect.top - 15}px`;
-
-      container.appendChild(el);
-      setTimeout(() => el.remove(), 850);
-    }
-
-    function stopCombatEngine() {
-      if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
-    }
-
-    function handleSuccessEvent(word) {
-      let points = 10;
-      if (GAME_STATE.difficulty === 'MEDIUM') points = 15;
-      if (GAME_STATE.difficulty === 'HARD') points = 25;
-
-      GAME_STATE.score += points;
-      document.getElementById('currentScore').innerText = GAME_STATE.score;
-
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        triggerPlayerAttack();
-      }
-    }
-
-    function handleBoardClear() {
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        document.getElementById('combatLog').innerText = "🌟 RE-CONSTRUCTING AREA...";
-        setTimeout(() => {
-          GAME_STATE.foundWords = [];
-          GAME_STATE.words = getRandomWords(GAME_STATE.difficulty);
-          buildGridBoard();
-        }, 800);
-      } else {
-        endGame(true, "Hebat! Semua kata rahasia berhasil dipecahkan!");
-      }
-    }
-
-    function regenerateBoardBtn() {
-      AudioGame.playSelect();
-      GAME_STATE.foundWords = [];
-      buildGridBoard();
-    }
-
-    function endGame(isVictory, message) {
-      if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
-      stopCombatEngine();
-
-      const modal = document.getElementById('resultModal');
-      const title = document.getElementById('resultTitle');
-      const text = document.getElementById('resultText');
-      const scoreEl = document.getElementById('resultScore');
-      const timeEl = document.getElementById('resultTime');
-      const emoji = document.getElementById('resultEmoji');
-
-      title.innerText = isVictory ? "MISSION ACCOMPLISHED" : "OPERATION FAILED";
-      text.innerText = message;
-      scoreEl.innerText = GAME_STATE.score;
-      emoji.innerText = isVictory ? "🏆" : "💀";
-
-      if (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") {
-        timeEl.innerText = "FREE";
-      } else {
-        timeEl.innerText = formatTime(GAME_STATE.timer);
-      }
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(() => console.log("Cloud synced."))
-          .saveHighScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
-      } else {
-        saveLocalScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
-      }
-
-      modal.classList.remove('hidden');
-    }
-
-    function surrenderGame() {
-      endGame(false, "Meninggalkan area operasi.");
-    }
-
-    // Reset dan kembali ke menu utama
-    function restartToMenu() {
-      document.getElementById('resultModal').classList.add('hidden');
-      document.getElementById('gameplayScene').classList.add('hidden');
-      document.getElementById('menuScene').classList.remove('hidden');
-      setupAestheticsNormalMenu();
-    }
-
-    function setupAestheticsNormalMenu() {
-      if (isDarkMode) {
-        document.body.className = "bg-slate-900 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-        document.getElementById('mainHeader').className = "bg-slate-950 text-emerald-400 px-4 py-2 border-b border-emerald-950 shrink-0";
-      } else {
-        document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-        document.getElementById('mainHeader').className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
-      }
-    }
-
-    function saveLocalScore(name, score, mode, diff) {
-      let scores = localStorage.getItem('localLeaderboard');
-      scores = scores ? JSON.parse(scores) : [];
-      scores.push({ nama: name, score, mode, difficulty: diff, tanggal: new Date().toLocaleDateString('id-ID') });
-      scores.sort((a, b) => b.score - a.score);
-      localStorage.setItem('localLeaderboard', JSON.stringify(scores.slice(0, 10)));
-    }
-
-    function toggleLeaderboardModal() {
-      AudioGame.playSelect();
-      const modal = document.getElementById('leaderboardModal');
-      const content = document.getElementById('leaderboardContent');
-
-      if (modal.classList.contains('hidden')) {
-        modal.classList.remove('hidden');
-        content.innerHTML = '<div class="text-center text-slate-500 py-3 mono-font">CONNECTING SECURE NETWORK...</div>';
-
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(renderScores)
-            .getLeaderboard();
-        } else {
-          const localScores = localStorage.getItem('localLeaderboard');
-          renderScores(localScores ? JSON.parse(localScores) : []);
-        }
-      } else {
-        modal.classList.add('hidden');
-      }
-    }
-
-    function renderScores(scores) {
-      const content = document.getElementById('leaderboardContent');
-      content.innerHTML = '';
-
-      if (!scores || scores.length === 0) {
-        content.innerHTML = '<div class="text-center text-slate-500 py-3 mono-font">NO RECORD REGISTERED.</div>';
-        return;
-      }
-
-      scores.forEach((entry, idx) => {
-        const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}.`));
-        const row = document.createElement('div');
-        row.className = "flex justify-between items-center bg-slate-100 dark:bg-slate-900/60 p-2 rounded border border-slate-200 dark:border-emerald-950 hover:bg-slate-200 dark:hover:bg-slate-900 transition";
-        row.innerHTML = `
-          <div class="flex items-center space-x-2">
-            <span class="font-black text-[11px] text-emerald-500">${medal}</span>
-            <div>
-              <div class="font-black text-slate-800 dark:text-slate-200 text-[10px] mono-font">${entry.nama}</div>
-              <div class="text-[7px] text-slate-500 uppercase tracking-widest mono-font">${entry.mode} • ${entry.difficulty}</div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="font-black text-emerald-600 dark:text-emerald-400 text-[11px] mono-font">${entry.score} PTS</div>
-            <div class="text-[7px] text-slate-500 mono-font">${entry.tanggal}</div>
-          </div>
-        `;
-        content.appendChild(row);
-      });
-    }
-  </script>
+  <script src="dictionary.js"></script>
+  <script src="audio.js"></script>
+  <script src="spirites.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
