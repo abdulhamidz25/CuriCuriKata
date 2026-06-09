@@ -76,9 +76,10 @@ function startGame() {
   GAME_STATE.playerName = inputName ? inputName : "Pencuri Kata";
   GAME_STATE.showWordList = document.getElementById('showWordToggle').checked;
   
+  // LOCK UKURAN GRID BARU: Easy 8, Medium 10, Hard 12
   if (GAME_STATE.difficulty === "EASY") GAME_STATE.gridSize = 8;
-  else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.gridSize = 12;
-  else GAME_STATE.gridSize = 15;
+  else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.gridSize = 10;
+  else GAME_STATE.gridSize = 12;
 
   GAME_STATE.score = 0;
   GAME_STATE.foundWords = [];
@@ -223,9 +224,10 @@ function renderGridHTML() {
     ? "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800"
     : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
 
+  // OPTIMASI UKURAN HURUF AGAR TIDAK MELEBAR/TUMPANG TINDIH SAAT DIKLIK
   let fontSizeClass = "text-sm sm:text-base";
-  if (size === 12) fontSizeClass = "text-[12px] sm:text-sm";
-  if (size === 15) fontSizeClass = "text-[9px] sm:text-[11px]";
+  if (size === 10) fontSizeClass = "text-[13px] sm:text-sm";
+  if (size === 12) fontSizeClass = "text-[11px] sm:text-[12px]";
 
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -243,7 +245,6 @@ function renderGridHTML() {
     }
   }
 
-  // Bind mouse / touch global actions agar tidak lari
   window.onmouseup = endSelection;
   gridElement.ontouchstart = handleTouchStart;
   gridElement.ontouchmove = handleTouchMove;
@@ -446,9 +447,11 @@ function startTimerEngine() {
     }, 1000);
   } else if (GAME_STATE.mode === "TIME_CHALLENGE") {
     timerLabel.innerText = "LIMIT:";
+    
+    // MENYESUAIKAN BATAS WAKTU BARU UNTUK UKURAN GRID BARU
     if (GAME_STATE.difficulty === "EASY") GAME_STATE.timer = 60;
-    else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.timer = 150;
-    else GAME_STATE.timer = 240;
+    else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.timer = 120; // 10x10 diberi waktu 2 menit
+    else GAME_STATE.timer = 180; // 12x12 diberi waktu 3 menit
 
     timerDisplay.innerText = formatTime(GAME_STATE.timer);
 
