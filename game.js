@@ -3,57 +3,35 @@
  * Mengelola logic gameplay, touch tracking, timer, combat loop, dan state.
  */
 
-// Sinkronisasi status tema awal saat script dimuat
-let isDarkMode = true;
+let GAME_STATE = {
+  playerName: "Pemain Baru",
+  difficulty: "EASY", 
+  mode: "CASUAL", 
+  gridSize: 8,
+  words: [],
+  foundWords: [],
+  grid: [],
+  timer: 0,
+  timerInterval: null,
+  score: 0,
+  showWordList: true,
+  
+  playerHp: 100,
+  enemyHp: 100,
+  turnInterval: null,
+  combatTimer: 0,
 
-function initTheme() {
-  const stored = localStorage.getItem('themePreference');
-  if (stored === 'light') {
-    isDarkMode = false;
-  } else {
-    isDarkMode = true;
-  }
-  applyThemeStyles();
-}
-
-function toggleTheme() {
-  isDarkMode = !isDarkMode;
-  localStorage.setItem('themePreference', isDarkMode ? 'dark' : 'light');
-  applyThemeStyles();
-  AudioGame.playSelect();
-}
-
-function applyThemeStyles() {
-  const htmlEl = document.documentElement;
-  const sunIcon = document.getElementById('themeSunIcon');
-  const moonIcon = document.getElementById('themeMoonIcon');
-
-  if (isDarkMode) {
-    htmlEl.classList.add('dark');
-    if (sunIcon) sunIcon.classList.remove('hidden');
-    if (moonIcon) moonIcon.classList.add('hidden');
-  } else {
-    htmlEl.classList.remove('dark');
-    if (sunIcon) sunIcon.classList.add('hidden');
-    if (moonIcon) moonIcon.classList.remove('hidden');
-  }
-
-  if (!document.getElementById('gameplayScene').classList.contains('hidden')) {
-    setupAesthetics();
-    renderGridHTML();
-    renderTargetWordsHTML();
-  }
-}
-
-// Inisialisasi tema segera
-initTheme();
+  isSelecting: false,
+  startCell: null,
+  selectedCells: []
+};
 
 function toggleOptionText() {
   const toggle = document.getElementById('showWordToggle');
   const text = document.getElementById('hintVisibilityText');
-  if (toggle.checked) {
+  if (toggle && toggle.checked) {
     text.innerText = "Aktif: Target kata ditampilkan jelas.";
-  } else {
+  } else if (text) {
     text.innerText = "Non-Aktif: Cari secara mandiri.";
   }
   AudioGame.playSelect();
@@ -62,37 +40,32 @@ function toggleOptionText() {
 function selectDifficulty(diff) {
   GAME_STATE.difficulty = diff;
   document.querySelectorAll('.difficulty-btn').forEach(btn => {
-    btn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-emerald-500/50";
+    btn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-slate-50 border-slate-300 text-slate-600 hover:border-emerald-500/50";
   });
   const selectedBtn = document.getElementById(`btnDiff${diff}`);
   if (selectedBtn) {
-    selectedBtn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400";
+    selectedBtn.className = "difficulty-btn py-2.5 px-3 rounded-xl font-black border-2 text-center transition flex flex-col items-center justify-center bg-emerald-500/10 border-emerald-500 text-emerald-600";
   }
   AudioGame.playSelect();
 }
 
 function selectMode(mode) {
   GAME_STATE.mode = mode;
-  const logo = document.getElementById('menuLogo');
-  if (mode === 'TURN_BASE') {
-    if (logo) logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo-red text-red-600 animate-pulse";
-  } else {
-    if (logo) logo.className = "text-4xl md:text-5xl font-black uppercase tracking-wider game-logo text-emerald-600 dark:text-emerald-400";
-  }
 
   document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-800 hover:border-emerald-500/50 text-slate-700 dark:text-slate-200";
+    btn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-slate-50 border-slate-300 hover:border-emerald-500/50 text-slate-700";
   });
   const selectedBtn = document.getElementById(`btnMode${mode}`);
   if (selectedBtn) {
-    selectedBtn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 dark:bg-emerald-900/20 border-emerald-500 text-slate-700 dark:text-slate-200";
+    selectedBtn.className = "mode-btn p-3 rounded-xl border-2 text-left transition flex items-center space-x-2.5 bg-emerald-500/10 border-emerald-500 text-slate-700";
   }
   AudioGame.playSelect();
 }
 
+// PERBAIKAN DIFFICULTY KATA: Semua difficulty sekarang mengambil jumlah kata yang SAMA (5 kata)
 function getRandomWords(difficulty) {
-  const pool = KATA_MASTER[difficulty];
-  const count = difficulty === 'EASY' ? 5 : (difficulty === 'MEDIUM' ? 8 : 10);
+  const pool = KATA_MASTER[difficulty] || KATA_MASTER.EASY;
+  const count = 5; // Tetap 5 kata di semua difficulty
   const shuffled = [...pool].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
@@ -115,7 +88,6 @@ function startGame() {
   buildGridBoard();
   startTimerEngine();
 
-  // Inject SVG karakter ke kontainer game
   if (typeof injectSprites === 'function') {
     injectSprites();
   }
@@ -128,6 +100,7 @@ function startGame() {
   document.getElementById('currentScore').innerText = GAME_STATE.score;
 }
 
+// MENGHAPUS TOTAL DARK MODE (KECUALI JIKA MASUK TURN_BASE RPG MODE)
 function setupAesthetics() {
   const header = document.getElementById('mainHeader');
   const scorePanel = document.getElementById('scorePanel');
@@ -135,14 +108,14 @@ function setupAesthetics() {
   const arena = document.getElementById('battleArena');
 
   if (GAME_STATE.mode === 'TURN_BASE') {
-    document.body.className = "bg-neutral-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
+    // Biarkan tetap gelap khusus RPG Battle Mode
+    document.body.className = "bg-neutral-950 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between pb-safe pt-safe";
     if (header) header.className = "bg-slate-950 text-red-500 px-4 py-2 border-b border-red-950 shrink-0";
     if (scorePanel) scorePanel.className = "bg-neutral-950 border-2 border-red-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
-    if (container) container.className = "bg-neutral-950 rounded-3xl p-3 border-4 border-red-950 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
+    if (container) container.className = "bg-neutral-950 rounded-3xl p-3 border-4 border-red-950 select-none w-full max-w-[min(90vw,60dvh)] max-h-[min(90vw,60dvh)] aspect-square flex items-center justify-center";
     
     document.getElementById('gamePlayerName').className = "text-xs font-black text-red-500 uppercase tracking-tight";
     document.getElementById('badgeDifficulty').className = "bg-red-950 border border-red-900/40 text-red-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-    
     if (arena) arena.classList.remove('hidden');
 
     GAME_STATE.playerHp = 100;
@@ -152,23 +125,14 @@ function setupAesthetics() {
     
     startCombatEngine();
   } else {
-    if (isDarkMode) {
-      document.body.className = "bg-slate-900 text-slate-100 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-      if (header) header.className = "bg-slate-950 text-emerald-400 px-4 py-2 border-b border-emerald-950 shrink-0";
-      if (scorePanel) scorePanel.className = "bg-slate-950 border-2 border-emerald-950 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-100";
-      if (container) container.className = "bg-slate-950 rounded-3xl p-3 border-4 border-emerald-950/60 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center";
+    // Kembalikan ke Full Light Mode untuk mode lainnya
+    document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between pb-safe pt-safe";
+    if (header) header.className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
+    if (scorePanel) scorePanel.className = "bg-white border-2 border-slate-300 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-800";
+    if (container) container.className = "bg-white rounded-3xl p-3 border-4 border-slate-800 select-none w-full max-w-[min(90vw,60dvh)] max-h-[min(90vw,60dvh)] aspect-square flex items-center justify-center shadow-lg";
 
-      document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-300 uppercase tracking-tight";
-      document.getElementById('badgeDifficulty').className = "bg-emerald-950 border border-emerald-800/40 text-emerald-400 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-    } else {
-      document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between transition-colors duration-500 pb-safe pt-safe";
-      if (header) header.className = "bg-white text-emerald-600 px-4 py-2 border-b border-slate-200 shrink-0";
-      if (scorePanel) scorePanel.className = "bg-white border-2 border-slate-300 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 shrink-0 text-slate-800";
-      if (container) container.className = "bg-white rounded-3xl p-3 border-4 border-slate-800 select-none w-full max-w-[min(95vw,65dvh)] max-h-[min(95vw,65dvh)] aspect-square flex flex-col justify-center items-center shadow-lg";
-
-      document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-600 uppercase tracking-tight";
-      document.getElementById('badgeDifficulty').className = "bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
-    }
+    document.getElementById('gamePlayerName').className = "text-xs font-black text-emerald-600 uppercase tracking-tight";
+    document.getElementById('badgeDifficulty').className = "bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black mono-font";
 
     if (arena) arena.classList.add('hidden');
     stopCombatEngine();
@@ -255,14 +219,9 @@ function renderGridHTML() {
   const size = GAME_STATE.gridSize;
   gridElement.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
 
-  let cellBgClass = "";
-  if (GAME_STATE.mode === 'TURN_BASE') {
-    cellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
-  } else {
-    cellBgClass = isDarkMode 
-      ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
-      : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
-  }
+  let cellBgClass = (GAME_STATE.mode === 'TURN_BASE')
+    ? "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800"
+    : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
 
   let fontSizeClass = "text-sm sm:text-base";
   if (size === 12) fontSizeClass = "text-[12px] sm:text-sm";
@@ -283,6 +242,12 @@ function renderGridHTML() {
       gridElement.appendChild(cell);
     }
   }
+
+  // Bind mouse / touch global actions agar tidak lari
+  window.onmouseup = endSelection;
+  gridElement.ontouchstart = handleTouchStart;
+  gridElement.ontouchmove = handleTouchMove;
+  gridElement.ontouchend = endSelection;
 }
 
 function renderTargetWordsHTML() {
@@ -300,22 +265,14 @@ function renderTargetWordsHTML() {
       badge.innerText = word;
     } else {
       if (GAME_STATE.showWordList) {
-        if (GAME_STATE.mode === 'TURN_BASE') {
-          badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-neutral-900 text-red-400 border border-red-950/60 transition-all shrink-0 mono-font";
-        } else {
-          badge.className = isDarkMode
-            ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-emerald-400 border border-emerald-950 transition-all shrink-0 mono-font"
-            : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-emerald-600 border border-emerald-200 transition-all shrink-0 mono-font";
-        }
+        badge.className = (GAME_STATE.mode === 'TURN_BASE')
+          ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-neutral-900 text-red-400 border border-red-950/60 transition-all shrink-0 mono-font"
+          : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-emerald-600 border border-emerald-200 transition-all shrink-0 mono-font";
         badge.innerText = word;
       } else {
-        if (GAME_STATE.mode === 'TURN_BASE') {
-          badge.className = "px-2.5 py-0.5 rounded text-[10px] font-black bg-red-950/20 text-red-500 border border-red-900/40 select-none animate-pulse shrink-0 mono-font";
-        } else {
-          badge.className = isDarkMode
-            ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-900 text-slate-500 border border-slate-800 select-none shrink-0 mono-font"
-            : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-400 border border-slate-200 select-none shrink-0 mono-font";
-        }
+        badge.className = (GAME_STATE.mode === 'TURN_BASE')
+          ? "px-2.5 py-0.5 rounded text-[10px] font-black bg-red-950/20 text-red-500 border border-red-900/40 select-none animate-pulse shrink-0 mono-font"
+          : "px-2.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-400 border border-slate-200 select-none shrink-0 mono-font";
         badge.innerText = `🔒 (L:${word.length})`;
       }
     }
@@ -403,9 +360,7 @@ function handleTouchStart(e) {
       cell = cell.parentElement;
     }
     if (cell && cell.dataset.row) {
-      const r = parseInt(cell.dataset.row);
-      const c = parseInt(cell.dataset.col);
-      startSelection(r, c);
+      startSelection(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
     }
   }
 }
@@ -421,9 +376,7 @@ function handleTouchMove(e) {
       cell = cell.parentElement;
     }
     if (cell && cell.dataset.row) {
-      const r = parseInt(cell.dataset.row);
-      const c = parseInt(cell.dataset.col);
-      continueSelection(r, c);
+      continueSelection(parseInt(cell.dataset.row), parseInt(cell.dataset.col));
     }
   }
 }
@@ -433,26 +386,18 @@ function highlightSelection() {
   GAME_STATE.selectedCells.forEach(cell => {
     const el = getCellElement(cell.r, cell.c);
     if (el) {
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-red-700 border-red-500 scale-105 mono-font`;
-      } else {
-        el.className = `grid-cell aspect-square flex items-center justify-center font-black text-white bg-emerald-600 border-emerald-400 scale-105 mono-font`;
-      }
+      el.className = (GAME_STATE.mode === 'TURN_BASE')
+        ? `grid-cell aspect-square flex items-center justify-center font-black text-white bg-red-700 border-red-500 scale-105 mono-font`
+        : `grid-cell aspect-square flex items-center justify-center font-black text-white bg-emerald-600 border-emerald-400 scale-105 mono-font`;
     }
   });
 }
 
 function clearTemporaryHighlight() {
   const size = GAME_STATE.gridSize;
-  
-  let baseCellBgClass = "";
-  if (GAME_STATE.mode === 'TURN_BASE') {
-    baseCellBgClass = "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800";
-  } else {
-    baseCellBgClass = isDarkMode 
-      ? "bg-slate-900 text-slate-100 hover:bg-emerald-950 border-slate-800" 
-      : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
-  }
+  let baseCellBgClass = (GAME_STATE.mode === 'TURN_BASE')
+    ? "bg-neutral-900 text-slate-100 hover:bg-red-950 border-neutral-800"
+    : "bg-white text-slate-950 border-slate-300 hover:bg-slate-200 hover:text-slate-950";
 
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -469,11 +414,9 @@ function markCellsAsFound(cells) {
     const el = getCellElement(cell.r, cell.c);
     if (el) {
       el.classList.add('found-cell');
-      if (GAME_STATE.mode === 'TURN_BASE') {
-        el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-600 text-white border-red-400 found-cell mono-font`;
-      } else {
-        el.className = `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-600 text-white border-emerald-400 found-cell mono-font`;
-      }
+      el.className = (GAME_STATE.mode === 'TURN_BASE')
+        ? `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-red-600 text-white border-red-400 found-cell mono-font`
+        : `grid-cell aspect-square flex items-center justify-center font-black border rounded cursor-pointer bg-emerald-600 text-white border-emerald-400 found-cell mono-font`;
     }
   });
 }
@@ -503,14 +446,9 @@ function startTimerEngine() {
     }, 1000);
   } else if (GAME_STATE.mode === "TIME_CHALLENGE") {
     timerLabel.innerText = "LIMIT:";
-    
-    if (GAME_STATE.difficulty === "EASY") {
-      GAME_STATE.timer = Math.floor(Math.random() * 61) + 30;
-    } else if (GAME_STATE.difficulty === "MEDIUM") {
-      GAME_STATE.timer = Math.floor(Math.random() * 61) + 120;
-    } else {
-      GAME_STATE.timer = Math.floor(Math.random() * 61) + 240;
-    }
+    if (GAME_STATE.difficulty === "EASY") GAME_STATE.timer = 60;
+    else if (GAME_STATE.difficulty === "MEDIUM") GAME_STATE.timer = 150;
+    else GAME_STATE.timer = 240;
 
     timerDisplay.innerText = formatTime(GAME_STATE.timer);
 
@@ -526,16 +464,17 @@ function startTimerEngine() {
   }
 }
 
+// PERBAIKAN TIMING RPG ATTACK: EASY = 20s, MEDIUM/NORMAL = 18s, HARD = 15s
 function startCombatEngine() {
   if (GAME_STATE.turnInterval) clearInterval(GAME_STATE.turnInterval);
   
   const cooldownMap = {
-    EASY: 15,
-    MEDIUM: 25,
-    HARD: 40
+    EASY: 20,    // Diubah dari 15 ke 20 detik
+    MEDIUM: 18,  // Diubah dari 25 ke 18 detik
+    HARD: 15     // Diubah dari 40 ke 15 detik
   };
   
-  const monsterCooldown = cooldownMap[GAME_STATE.difficulty] || 15;
+  const monsterCooldown = cooldownMap[GAME_STATE.difficulty] || 20;
   GAME_STATE.combatTimer = monsterCooldown;
   
   GAME_STATE.turnInterval = setInterval(() => {
@@ -559,19 +498,23 @@ function triggerEnemyAttack() {
   const heroSpriteContainer = document.getElementById('heroSpriteContainer');
   const enemySpriteContainer = document.getElementById('enemySpriteContainer');
 
-  enemySpriteContainer.classList.remove('sprite-idle');
-  enemySpriteContainer.classList.add('enemy-attack-anim');
+  if (enemySpriteContainer) {
+    enemySpriteContainer.classList.remove('sprite-idle');
+    enemySpriteContainer.classList.add('enemy-attack-anim');
+  }
 
   setTimeout(() => {
-    heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
+    if (heroSpriteContainer) heroSpriteContainer.classList.add('shake-anim', 'hit-flash');
     if (arena) arena.classList.add('shake-anim');
     createDamageFloatEffect(heroSpriteContainer, "-10 HP", "text-red-500");
   }, 200);
 
   setTimeout(() => {
-    enemySpriteContainer.classList.remove('enemy-attack-anim');
-    enemySpriteContainer.classList.add('sprite-idle');
-    heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
+    if (enemySpriteContainer) {
+      enemySpriteContainer.classList.remove('enemy-attack-anim');
+      enemySpriteContainer.classList.add('sprite-idle');
+    }
+    if (heroSpriteContainer) heroSpriteContainer.classList.remove('shake-anim', 'hit-flash');
     if (arena) arena.classList.remove('shake-anim');
   }, 550);
 
@@ -592,20 +535,24 @@ function triggerPlayerAttack() {
   const enemySpriteContainer = document.getElementById('enemySpriteContainer');
   const sword = document.getElementById('heroSwordG');
 
-  heroSpriteContainer.classList.remove('sprite-idle');
-  heroSpriteContainer.classList.add('hero-attack-anim');
+  if (heroSpriteContainer) {
+    heroSpriteContainer.classList.remove('sprite-idle');
+    heroSpriteContainer.classList.add('hero-attack-anim');
+  }
   if (sword) sword.style.transform = "rotate(75deg)";
 
   setTimeout(() => {
-    enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
+    if (enemySpriteContainer) enemySpriteContainer.classList.add('shake-anim', 'hit-flash');
     createDamageFloatEffect(enemySpriteContainer, "-10 HP", "text-emerald-400");
   }, 200);
 
   setTimeout(() => {
-    heroSpriteContainer.classList.remove('hero-attack-anim');
-    heroSpriteContainer.classList.add('sprite-idle');
+    if (heroSpriteContainer) {
+      heroSpriteContainer.classList.remove('hero-attack-anim');
+      heroSpriteContainer.classList.add('sprite-idle');
+    }
     if (sword) sword.style.transform = "rotate(0deg)";
-    enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
+    if (enemySpriteContainer) enemySpriteContainer.classList.remove('shake-anim', 'hit-flash');
   }, 550);
 
   document.getElementById('combatLog').innerText = "⚔️ HERO STRIKE: -10 HP";
@@ -627,7 +574,7 @@ function updateHpBars() {
 
 function createDamageFloatEffect(targetElement, text, colorClass) {
   const container = document.getElementById('damageOverlay');
-  if (!container) return;
+  if (!container || !targetElement) return;
   const rect = targetElement.getBoundingClientRect();
   const parentRect = container.getBoundingClientRect();
 
@@ -647,10 +594,7 @@ function stopCombatEngine() {
 }
 
 function handleSuccessEvent(word) {
-  let points = 10;
-  if (GAME_STATE.difficulty === 'MEDIUM') points = 15;
-  if (GAME_STATE.difficulty === 'HARD') points = 25;
-
+  let points = (GAME_STATE.difficulty === 'EASY') ? 10 : (GAME_STATE.difficulty === 'MEDIUM' ? 15 : 25);
   GAME_STATE.score += points;
   document.getElementById('currentScore').innerText = GAME_STATE.score;
 
@@ -686,7 +630,13 @@ function restartToMenu() {
   document.getElementById('resultModal').classList.add('hidden');
   document.getElementById('gameplayScene').classList.add('hidden');
   document.getElementById('menuScene').classList.remove('hidden');
-  setupAestheticsNormalMenu();
+  document.body.className = "bg-slate-100 text-slate-800 h-[100dvh] w-screen overflow-hidden flex flex-col justify-between pb-safe pt-safe";
+}
+
+function formatTime(seconds) {
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
+  return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
 }
 
 function saveLocalScore(name, score, mode, diff) {
@@ -705,15 +655,8 @@ function toggleLeaderboardModal() {
   if (modal.classList.contains('hidden')) {
     modal.classList.remove('hidden');
     content.innerHTML = '<div class="text-center text-slate-500 py-3 mono-font">CONNECTING SECURE NETWORK...</div>';
-
-    if (typeof google !== 'undefined' && google.script && google.script.run) {
-      google.script.run
-        .withSuccessHandler(renderScores)
-        .getLeaderboard();
-    } else {
-      const localScores = localStorage.getItem('localLeaderboard');
-      renderScores(localScores ? JSON.parse(localScores) : []);
-    }
+    const localScores = localStorage.getItem('localLeaderboard');
+    renderScores(localScores ? JSON.parse(localScores) : []);
   } else {
     modal.classList.add('hidden');
   }
@@ -730,22 +673,37 @@ function renderScores(scores) {
   }
 
   scores.forEach((entry, idx) => {
-    const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : \`\${idx + 1}.\`));
+    const medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}.`));
     const row = document.createElement('div');
-    row.className = "flex justify-between items-center bg-slate-100 dark:bg-slate-900/60 p-2 rounded border border-slate-200 dark:border-emerald-950 hover:bg-slate-200 dark:hover:bg-slate-900 transition";
+    row.className = "flex justify-between items-center bg-slate-50 p-2 rounded border border-slate-200 hover:bg-slate-100 transition";
     row.innerHTML = `
       <div class="flex items-center space-x-2">
-        <span class="font-black text-[11px] text-emerald-500">\${medal}</span>
+        <span class="font-black text-[11px] text-emerald-500">${medal}</span>
         <div>
-          <div class="font-black text-slate-800 dark:text-slate-200 text-[10px] mono-font">\${entry.nama}</div>
-          <div class="text-[7px] text-slate-500 uppercase tracking-widest mono-font">\${entry.mode} • \${entry.difficulty}</div>
+          <div class="font-black text-slate-800 text-[10px] mono-font">${entry.nama}</div>
+          <div class="text-[7px] text-slate-500 uppercase tracking-widest mono-font">${entry.mode} • ${entry.difficulty}</div>
         </div>
       </div>
       <div class="text-right">
-        <div class="font-black text-emerald-600 dark:text-emerald-400 text-[11px] mono-font">\${entry.score} PTS</div>
-        <div class="text-[7px] text-slate-500 mono-font">\${entry.tanggal}</div>
+        <div class="font-black text-emerald-600 text-[11px] mono-font">${entry.score} PTS</div>
+        <div class="text-[7px] text-slate-500 mono-font">${entry.tanggal}</div>
       </div>
     `;
     content.appendChild(row);
   });
+}
+
+function endGame(isVictory, message) {
+  if (GAME_STATE.timerInterval) clearInterval(GAME_STATE.timerInterval);
+  stopCombatEngine();
+
+  const modal = document.getElementById('resultModal');
+  document.getElementById('resultTitle').innerText = isVictory ? "MISSION ACCOMPLISHED" : "OPERATION FAILED";
+  document.getElementById('resultText').innerText = message;
+  document.getElementById('resultScore').innerText = GAME_STATE.score;
+  document.getElementById('resultEmoji').innerText = isVictory ? "🏆" : "💀";
+  document.getElementById('resultTime').innerText = (GAME_STATE.mode === "CASUAL" || GAME_STATE.mode === "TURN_BASE") ? "FREE" : formatTime(GAME_STATE.timer);
+
+  saveLocalScore(GAME_STATE.playerName, GAME_STATE.score, GAME_STATE.mode, GAME_STATE.difficulty);
+  modal.classList.remove('hidden');
 }
